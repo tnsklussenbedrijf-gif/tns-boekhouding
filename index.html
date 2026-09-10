@@ -2,8 +2,16 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>TNS Boekhouding</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TNS Boekhouding">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--blue:#1d4ed8;--blue-d:#1e40af;--blue-l:#dbeafe;--bg:#f3f6fb;--card:#fff;--txt:#111827;--muted:#6b7280;--line:#e5e7eb;--green:#059669;--red:#dc2626;--amber:#d97706;--r:12px}
@@ -108,6 +116,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
     <a href="#export" data-p="export"><span class="ic">⇪</span>Export / Boekhouder</a>
     <a href="#instellingen" data-p="instellingen"><span class="ic">⚙</span>Instellingen</a>
   </div>
+  <button id="installBtn" class="btn sec sm" style="display:none;margin:0 10px 10px" onclick="installApp()">⬇ Installeer als app</button>
   <div style="margin-top:auto;font-size:11px;color:#475569;padding:10px"><span id="syncState">…</span><br>Data staat veilig in de cloud (Supabase).</div>
 </aside>
 <main>
@@ -818,6 +827,11 @@ async function boot(){
 }
 sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT'){document.getElementById('lock').style.display='flex'}});
 boot();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})})}
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredInstallPrompt=e;const b=document.getElementById('installBtn');if(b)b.style.display='inline-flex'});
+async function installApp(){if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;const b=document.getElementById('installBtn');if(b)b.style.display='none'}
+window.addEventListener('appinstalled',()=>{const b=document.getElementById('installBtn');if(b)b.style.display='none'});
 document.addEventListener('paste',e=>{const items=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/')).map(i=>i.getAsFile());if(items.length&&!document.getElementById('invModal').classList.contains('open'))handleFiles(items)});
 </script>
 </body>
