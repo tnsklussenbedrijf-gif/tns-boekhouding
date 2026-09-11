@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TNS Boekhouding</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TNS Boekhouding">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--blue:#1d4ed8;--blue-d:#1e40af;--blue-l:#dbeafe;--bg:#f3f6fb;--card:#fff;--txt:#111827;--muted:#6b7280;--line:#e5e7eb;--green:#059669;--red:#dc2626;--amber:#d97706;--r:12px}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:var(--txt);width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--blue-l);border-color:var(--blue)}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.field{margin-bottom:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.btn{background:var(--blue);color:#fff;border:0;padding:9px 16px;border-radius:8px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--blue-d)}
+.btn.sec{background:#fff;color:var(--blue);border:1px solid #bfdbfe}.btn.sec:hover{background:var(--blue-l)}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}.btn.ghost:hover{background:#f9fafb}
+.btn.danger{background:#fff;color:var(--red);border:1px solid #fecaca}.btn.danger:hover{background:#fef2f2}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+a.btn{text-decoration:none}
+#app{display:flex;min-height:100vh}
+aside{width:230px;background:#0f172a;color:#cbd5e1;padding:18px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;flex-shrink:0}
+.logo{color:#fff;font-weight:800;font-size:18px;letter-spacing:.3px;padding:6px 10px 16px}
+.logo small{display:block;color:#64748b;font-weight:500;font-size:11px;margin-top:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#cbd5e1;text-decoration:none;font-weight:500;margin-bottom:2px}
+.nav a:hover{background:#1e293b;color:#fff}.nav a.active{background:var(--blue);color:#fff}
+.nav a .ic{width:18px;text-align:center;opacity:.9}
+.nav .badge{margin-left:auto;background:#f59e0b;color:#111;font-size:11px;padding:1px 7px;border-radius:10px;font-weight:700}
+.compsel{margin:8px 0 14px}
+.compsel select{background:#1e293b;color:#fff;border-color:#334155}
+main{flex:1;padding:22px 28px;max-width:1300px;min-width:0}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+h1{font-size:22px;margin:0}h2{font-size:16px;margin:0 0 12px}h3{font-size:14px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px}
+.grid{display:grid;gap:14px}.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:600}.kpi .v{font-size:24px;font-weight:800;margin-top:4px}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
+.pos{color:var(--green)}.neg{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:hover td{background:#f8fafc}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.tag.g{background:#d1fae5;color:#065f46}.tag.r{background:#fee2e2;color:#991b1b}.tag.a{background:#fef3c7;color:#92400e}.tag.b{background:var(--blue-l);color:var(--blue-d)}.tag.gr{background:#f1f5f9;color:#475569}
+.tablewrap{overflow-x:auto}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.drop{border:2px dashed #93c5fd;border-radius:var(--r);padding:34px;text-align:center;background:#eff6ff;color:var(--blue-d);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{background:var(--blue-l);border-color:var(--blue)}
+.drop b{display:block;font-size:16px;margin-bottom:4px}
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto;z-index:50}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:1100px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal.narrow{max-width:560px}
+.modal-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+.preview{background:#f1f5f9;border-radius:10px;min-height:300px;max-height:75vh;overflow:auto;display:flex;align-items:flex-start;justify-content:center}
+.preview img{max-width:100%;height:auto}.preview iframe{width:100%;height:75vh;border:0}
+.vatrow{display:grid;grid-template-columns:90px 1fr 1fr 32px;gap:8px;align-items:end;margin-bottom:6px}
+.totals{background:#f8fafc;border-radius:10px;padding:12px;margin-top:8px}
+.totals div{display:flex;justify-content:space-between;padding:3px 0}
+.totals .big{font-weight:800;font-size:16px;border-top:1px solid var(--line);margin-top:6px;padding-top:8px}
+.warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:8px 12px;border-radius:8px;font-size:13px;margin:8px 0}
+.ok{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;padding:8px 12px;border-radius:8px;font-size:13px;margin:8px 0}
+.err{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;padding:8px 12px;border-radius:8px;font-size:13px;margin:8px 0}
+.aibox{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(90deg,#eef2ff,#eff6ff);border:1px solid #c7d2fe;border-radius:10px;margin-bottom:12px}
+.spin{width:18px;height:18px;border:3px solid #c7d2fe;border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px}.filters>*{width:auto;min-width:120px}
+.toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:99;display:none;max-width:400px}
+.toast.show{display:block}
+.btwtable td:first-child{font-weight:600}.btwtable .rub{color:var(--muted);font-weight:700;width:50px}
+.sub{color:var(--muted);font-size:12px}
+.chk{display:flex;align-items:center;gap:8px;font-weight:500;color:var(--txt);font-size:13px}.chk input{width:auto}
+.link{color:var(--blue);cursor:pointer;text-decoration:underline;background:none;border:0;padding:0;font-size:inherit}
+.thumb{width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:pointer;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;font-size:16px}
+.steps{display:flex;gap:6px;margin-bottom:12px;font-size:12px}
+.steps span{padding:4px 10px;border-radius:999px;background:#f1f5f9;color:var(--muted)}.steps span.on{background:var(--blue);color:#fff}
+.matchbox{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:6px;background:#f8fafc;font-size:12px}
+.hamb{display:none}
+@media(max-width:760px){aside{position:fixed;left:-240px;z-index:40;transition:.2s}aside.open{left:0}main{padding:14px}.hamb{display:inline-block}}
+@media print{aside,.topbar .actions,.noprint{display:none!important}main{padding:0}body{background:#fff}.card{border:0}}
+.lock{position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:100}
+.lock .box{background:#fff;padding:30px;border-radius:16px;width:340px;text-align:center}
+</style>
+</head>
+<body>
+<div id="lock" class="lock" style="display:none"><div class="box"><div class="logo" style="color:#0f172a;padding:0 0 14px">TNS Boekhouding<small>Inloggen</small></div><div class="field"><input id="lockem" type="email" placeholder="E-mailadres" autocomplete="username"></div><div class="field"><input id="lockpw" type="password" placeholder="Wachtwoord" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div><button class="btn" style="width:100%" onclick="login()">Inloggen</button><div id="lockerr" class="sub" style="margin-top:8px;min-height:16px"></div></div></div>
+<div id="app">
+<aside id="side">
+  <div class="logo">TNS Boekhouding<small>Professionele administratie</small></div>
+  <div class="compsel"><label style="color:#64748b">Bedrijf</label><select id="compSel" onchange="switchCompany(this.value)"></select></div>
+  <div class="nav" id="nav">
+    <a href="#dashboard" data-p="dashboard"><span class="ic">▦</span>Dashboard</a>
+    <a href="#snel" data-p="snel"><span class="ic">📷</span>Snelscan</a>
+    <a href="#kwartalen" data-p="kwartalen"><span class="ic">▤</span>Kwartalen</a>
+    <a href="#inkoop" data-p="inkoop"><span class="ic">⬇</span>Inkoop / Bonnen</a>
+    <a href="#verkoop" data-p="verkoop"><span class="ic">⬆</span>Verkoop</a>
+    <a href="#bank" data-p="bank"><span class="ic">🏦</span>Bank<span class="badge" id="bankBadge" style="display:none"></span></a>
+    <a href="#btw" data-p="btw"><span class="ic">%</span>BTW-aangifte</a>
+    <a href="#export" data-p="export"><span class="ic">⇪</span>Export / Boekhouder</a>
+    <a href="#instellingen" data-p="instellingen"><span class="ic">⚙</span>Instellingen</a>
+  </div>
+  <button id="installBtn" class="btn sec sm" style="display:none;margin:0 10px 10px" onclick="installApp()">⬇ Installeer als app</button>
+  <div style="margin-top:auto;font-size:11px;color:#475569;padding:10px"><span id="syncState">…</span><br>Data staat veilig in de cloud (Supabase).</div>
+</aside>
+<main>
+  <div class="topbar"><div style="display:flex;gap:10px;align-items:center"><button class="btn ghost hamb" onclick="document.getElementById('side').classList.toggle('open')">☰</button><h1 id="pageTitle">Dashboard</h1></div><div class="actions" id="pageActions"></div></div>
+  <div id="page"></div>
+</main>
+</div>
+
+<!-- Modal: factuur bewerken / AI resultaat -->
+<div class="modal-bg" id="invModal"><div class="modal">
+  <div class="modal-h"><h2 id="invModalTitle">Factuur</h2><button class="btn ghost sm" onclick="closeModal('invModal')">✕ Sluiten</button></div>
+  <div id="aiStatus"></div>
+  <div class="split">
+    <div><div class="preview" id="invPreview"><div class="empty">Geen bijlage</div></div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><input type="file" id="invFileReplace" accept="image/*,application/pdf" style="display:none" onchange="replaceAttachment(this.files[0])"><button class="btn sec sm" onclick="document.getElementById('invFileReplace').click()">Bijlage toevoegen/vervangen</button><button class="btn sec sm" id="reReadBtn" onclick="aiReadCurrent()">🤖 Opnieuw lezen met AI</button></div>
+    </div>
+    <div id="invForm"></div>
+  </div>
+</div></div>
+
+<!-- Modal: generiek -->
+<div class="modal-bg" id="genModal"><div class="modal narrow" id="genModalBox"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="hiddenUpload" multiple accept="image/*,application/pdf" style="display:none" onchange="handleFiles(this.files);this.value=''">
+<input type="file" id="hiddenBank" accept=".csv,.txt,.sta,.940,.mt940,text/*" style="display:none" onchange="handleBankFile(this.files[0]);this.value=''">
+<input type="file" id="hiddenRestore" accept=".json" style="display:none" onchange="restoreBackup(this.files[0]);this.value=''">
+<script>
+/* ================== SUPABASE CONFIG ================== */
+const SUPABASE_URL='https://beujkjbaaurklckmwwzi.supabase.co';
+const SUPABASE_KEY='sb_publishable_1eNsuiQbC1QAm_f23ltmJQ_36cYVvJA';
+if(!window.supabase){document.body.innerHTML='<div style="padding:40px;font-family:sans-serif"><h2>Kan supabase-js niet laden</h2>Controleer je internetverbinding en herlaad de pagina.</div>';throw new Error('supabase-js niet geladen')}
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const CATS=['Materiaal','Onderaannemer','Gereedschap','Auto & brandstof','Huur & huisvesting','Telefoon & internet','Software & abonnementen','Marketing','Verzekering','Kantoor','Representatie','Bankkosten','Overig'];
+let S={companies:[],active:'tns',purchases:[],sales:[],bank:[],settings:{model:'claude-sonnet-4-6',autoRead:true,reminders:{}},role:'accountant',user:null};
+const isOwner=()=>S.role==='owner';
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+/* ---- Laden uit Supabase ---- */
+const snap={inv:{},bank:{},comp:{},settings:''};
+function invRow(i){return{id:i.id,company:i.company,type:i.type,date:i.date||null,status:i.status||'open',needs_check:!!i.needsCheck,file_id:i.fileId||null,data:i,updated_at:new Date().toISOString()}}
+function bankRow(b){return{id:b.id,company:b.company,date:b.date||null,amount:b.amount,match_id:b.matchId||null,data:b,updated_at:new Date().toISOString()}}
+function takeSnapshot(){snap.inv={};snap.bank={};snap.comp={};[...S.purchases,...S.sales].forEach(i=>snap.inv[i.id]=JSON.stringify(i));S.bank.forEach(b=>snap.bank[b.id]=JSON.stringify(b));S.companies.forEach(c=>snap.comp[c.id]=JSON.stringify(c));snap.settings=JSON.stringify(S.settings)}
+async function load(){
+ const [c,i,b,st,pr]=await Promise.all([
+  sb.from('bh_companies').select('*').order('sort'),
+  sb.from('bh_invoices').select('data'),
+  sb.from('bh_bank').select('data'),
+  sb.from('bh_settings').select('*').eq('key','app').maybeSingle(),
+  sb.from('bh_profiles').select('role').eq('user_id',S.user.id).maybeSingle()
+ ]);
+ if(c.error)throw new Error('Bedrijven laden: '+c.error.message);
+ S.companies=c.data.map(x=>({id:x.id,name:x.name,short:x.short||x.name,kvk:x.kvk||'',btwnr:x.btwnr||'',iban:x.iban||'',sort:x.sort||0}));
+ const inv=(i.data||[]).map(x=>x.data);
+ S.purchases=inv.filter(x=>x.type==='purchase');S.sales=inv.filter(x=>x.type==='sale');
+ [S.purchases,S.sales].forEach(l=>l.sort((a,b)=>(b.date||'').localeCompare(a.date||'')));
+ S.bank=(b.data||[]).map(x=>x.data);S.bank.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ S.settings=Object.assign({model:'claude-sonnet-4-6',autoRead:true,reminders:{}},st.data?.value||{});if(!S.settings.reminders)S.settings.reminders={};
+ S.role=pr.data?.role||'accountant';
+ try{const a=localStorage.getItem('tnsbh_active');if(a&&S.companies.find(x=>x.id===a))S.active=a}catch(e){}
+ if(!S.companies.find(x=>x.id===S.active))S.active=S.companies[0]?.id||'tns';
+ takeSnapshot();
+}
+/* ---- Opslaan: vergelijk met snapshot, schrijf alleen wijzigingen ---- */
+let saveT=null,saving=false,saveAgain=false;
+function save(){try{localStorage.setItem('tnsbh_active',S.active)}catch(e){}if(!isOwner())return;clearTimeout(saveT);saveT=setTimeout(syncNow,250)}
+async function syncNow(){
+ if(saving){saveAgain=true;return}saving=true;setSyncState('busy');
+ try{
+  const invs=[...S.purchases,...S.sales];const upI=[],delI=[];const seen={};
+  invs.forEach(i=>{seen[i.id]=1;const j=JSON.stringify(i);if(snap.inv[i.id]!==j)upI.push(invRow(i))});
+  Object.keys(snap.inv).forEach(id=>{if(!seen[id])delI.push(id)});
+  const upB=[],delB=[];const seenB={};
+  S.bank.forEach(b=>{seenB[b.id]=1;const j=JSON.stringify(b);if(snap.bank[b.id]!==j)upB.push(bankRow(b))});
+  Object.keys(snap.bank).forEach(id=>{if(!seenB[id])delB.push(id)});
+  const upC=[],delC=[];const seenC={};
+  S.companies.forEach(c=>{seenC[c.id]=1;if(snap.comp[c.id]!==JSON.stringify(c))upC.push({id:c.id,name:c.name,short:c.short,kvk:c.kvk,btwnr:c.btwnr,iban:c.iban,sort:c.sort||0})});
+  Object.keys(snap.comp).forEach(id=>{if(!seenC[id])delC.push(id)});
+  const ops=[];
+  if(upC.length)ops.push(sb.from('bh_companies').upsert(upC));
+  for(let k=0;k<upI.length;k+=200)ops.push(sb.from('bh_invoices').upsert(upI.slice(k,k+200)));
+  for(let k=0;k<upB.length;k+=200)ops.push(sb.from('bh_bank').upsert(upB.slice(k,k+200)));
+  // Verwijderen in kleine batches: een .in('id',[...]) met honderden id's maakt een zeer lange
+  // request-URL die door de server/proxy geweigerd kan worden (bv. "URI too long"). Dat leverde
+  // eerder een stille sync-fout op waarna een pagina-ververs de "verwijderde" rijen weer terugbracht.
+  const DELCHUNK=80;
+  for(let k=0;k<delI.length;k+=DELCHUNK)ops.push(sb.from('bh_invoices').delete().in('id',delI.slice(k,k+DELCHUNK)));
+  for(let k=0;k<delB.length;k+=DELCHUNK)ops.push(sb.from('bh_bank').delete().in('id',delB.slice(k,k+DELCHUNK)));
+  for(let k=0;k<delC.length;k+=DELCHUNK)ops.push(sb.from('bh_companies').delete().in('id',delC.slice(k,k+DELCHUNK)));
+  if(snap.settings!==JSON.stringify(S.settings))ops.push(sb.from('bh_settings').upsert({key:'app',value:S.settings,updated_at:new Date().toISOString()}));
+  const res=await Promise.all(ops);const err=res.find(r=>r&&r.error);
+  if(err)throw new Error(err.error.message);
+  takeSnapshot();setSyncState('ok');
+ }catch(e){
+  console.error(e);setSyncState('err');
+  // Bewust géén auto-verdwijnend toastje: als opslaan mislukt (bv. na een grote verwijderactie)
+  // mag de gebruiker dit niet missen en de pagina verversen — dat zou de mislukte wijziging weer
+  // ongedaan maken doordat de oude data uit de cloud opnieuw geladen wordt.
+  toast('⚠️ Opslaan in cloud mislukt: '+esc(e.message)+'. Ververs of sluit deze pagina NIET — probeer het opnieuw of wacht tot het vanzelf lukt.',15000);
+  // Automatisch opnieuw proberen (bv. bij een tijdelijk netwerkprobleem of een te lange
+  // verwijder-opdracht die na het opsplitsen alsnog faalt), zodat de gebruiker niet zelf iets
+  // hoeft te doen én niet in de verleiding komt om te verversen.
+  clearTimeout(saveT);saveT=setTimeout(syncNow,4000);
+ }
+ saving=false;if(saveAgain){saveAgain=false;syncNow()}
+}
+window.addEventListener('beforeunload',(e)=>{const el=document.getElementById('syncState');if(el&&el.style.color==='rgb(248, 113, 113)'){e.preventDefault();e.returnValue='Niet alle wijzigingen zijn opgeslagen in de cloud. Weet je zeker dat je wilt sluiten?';return e.returnValue}});
+function setSyncState(s){const el=document.getElementById('syncState');if(!el)return;el.textContent=s==='busy'?'⟳ opslaan…':s==='ok'?'✓ opgeslagen':'⚠ NIET opgeslagen — niet verversen!';el.style.color=s==='err'?'#f87171':'#64748b'}
+/* ---- Bijlagen in Supabase Storage ---- */
+const fileCache={};
+async function putFile(id,obj){const {error}=await sb.storage.from('bijlagen').upload(id,obj.blob,{contentType:obj.type||'application/octet-stream',upsert:true});if(error)throw new Error('Upload mislukt: '+error.message);fileCache[id]={blob:obj.blob,type:obj.type,name:obj.name}}
+async function getFile(id){if(!id)return null;if(fileCache[id])return fileCache[id];const {data,error}=await sb.storage.from('bijlagen').download(id);if(error||!data)return null;const f={blob:data,type:data.type||'application/octet-stream',name:id};fileCache[id]=f;return f}
+async function delFile(id){if(!id)return;delete fileCache[id];try{await sb.storage.from('bijlagen').remove([id])}catch(e){}}
+async function allFiles(){const out={};const ids=[...S.purchases,...S.sales].filter(p=>p.fileId).map(p=>p.fileId);for(const id of ids){const f=await getFile(id);if(f)out[id]=f}return out}
+
+/* ================== HELPERS ================== */
+const fmt=n=>(Number(n)||0).toLocaleString('nl-NL',{style:'currency',currency:'EUR'});
+const r2=n=>Math.round((Number(n)||0)*100)/100;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fdate=d=>{if(!d)return'';const [y,m,dd]=d.split('-');return `${dd}-${m}-${y}`};
+const today=()=>new Date().toISOString().slice(0,10);
+const comp=()=>S.companies.find(c=>c.id===S.active)||S.companies[0];
+const myP=()=>S.purchases.filter(p=>p.company===S.active);
+const myS=()=>S.sales.filter(p=>p.company===S.active);
+const myB=()=>S.bank.filter(p=>p.company===S.active);
+function toast(m,ms=3200){const t=document.getElementById('toast');t.innerHTML=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),ms)}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function genModal(html){const b=document.getElementById('genModalBox');b.classList.add('narrow');b.innerHTML=html;openModal('genModal')}
+function quarterOf(d){return Math.floor((parseInt(d.slice(5,7))-1)/3)+1}
+function inPeriod(d,year,q){if(!d)return false;if(d.slice(0,4)!==String(year))return false;if(q==='all')return true;if(String(q).startsWith('m'))return parseInt(d.slice(5,7))===parseInt(q.slice(1));return quarterOf(d)===Number(q)}
+function parseNum(v){if(v==null||v==='')return 0;if(typeof v==='number')return v;let s=String(v).trim().replace(/[€\s]/g,'');if(/,\d{1,2}$/.test(s))s=s.replace(/\./g,'').replace(',','.');else if(/\.\d{1,2}$/.test(s))s=s.replace(/,/g,'');else s=s.replace(/[.,]/g,'');const n=parseFloat(s);return isNaN(n)?0:n}
+function normDate(v){if(!v)return'';v=String(v).trim();let m;if((m=v.match(/^(\d{4})-(\d{2})-(\d{2})/)))return `${m[1]}-${m[2]}-${m[3]}`;if((m=v.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/)))return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;if((m=v.match(/^(\d{4})(\d{2})(\d{2})$/)))return `${m[1]}-${m[2]}-${m[3]}`;if((m=v.match(/^(\d{2})(\d{2})(\d{2})$/)))return `20${m[1]}-${m[2]}-${m[3]}`;return''}
+function download(name,content,type='text/plain'){const b=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function csv(rows){return '﻿'+rows.map(r=>r.map(v=>{v=v==null?'':String(v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')).join('\r\n')}
+function vatTotals(lines){let net=0,vat=0;(lines||[]).forEach(l=>{net+=Number(l.net)||0;vat+=Number(l.vat)||0});return{net:r2(net),vat:r2(vat),gross:r2(net+vat)}}
+
+/* ================== NAVIGATIE ================== */
+const TITLES={dashboard:'Dashboard',snel:'📷 Snelscan',kwartalen:'Kwartalen',inkoop:'Inkoop / Bonnen',verkoop:'Verkoop',bank:'Bank',btw:'BTW-aangifte',export:'Export / Boekhouder',instellingen:'Instellingen'};
+let cur='dashboard';
+function route(){const p=(location.hash||'#dashboard').slice(1);cur=TITLES[p]?p:'dashboard';document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.p===cur));document.getElementById('pageTitle').textContent=TITLES[cur];document.getElementById('side').classList.remove('open');render()}
+window.addEventListener('hashchange',route);
+function render(){const A=document.getElementById('pageActions');A.innerHTML='';({dashboard:renderDashboard,snel:renderSnel,kwartalen:renderKwartalen,inkoop:renderInkoop,verkoop:renderVerkoop,bank:renderBank,btw:renderBtw,export:renderExport,instellingen:renderSettings})[cur]();updateBadges()}
+function switchCompany(id){S.active=id;save();render();toast('Bedrijf: <b>'+esc(comp().short)+'</b>')}
+function fillCompanies(){const s=document.getElementById('compSel');s.innerHTML=S.companies.map(c=>`<option value="${c.id}" ${c.id===S.active?'selected':''}>${esc(c.short||c.name)}</option>`).join('')}
+function updateBadges(){const n=myB().filter(b=>!b.matchId&&!b.ignored).length;const b=document.getElementById('bankBadge');b.style.display=n?'inline':'none';b.textContent=n}
+
+/* ================== KWARTALEN ================== */
+let kwYear=String(new Date().getFullYear());
+function renderKwartalen(){
+ const years=[...new Set([...S.purchases,...S.sales].map(p=>(p.date||'').slice(0,4)).filter(Boolean).concat(String(new Date().getFullYear())))].sort().reverse();
+ const y=kwYear;const nowQ=quarterOf(today()),nowY=String(new Date().getFullYear());
+ const cards=[1,2,3,4].map(qn=>{const P=myP().filter(p=>inPeriod(p.date,y,qn)),Sa=myS().filter(p=>inPeriod(p.date,y,qn));const bons=P.filter(p=>p.docType==='bon');const chk=[...P,...Sa].filter(p=>p.needsCheck).length;const r=btwCalc(y,qn);const a=getAang(y,qn);const isNow=y===nowY&&qn===nowQ;const deadline=new Date(Number(y),qn*3+1,0);
+  const sumS=Sa.reduce((s,p)=>s+vatTotals(p.lines).gross,0),sumP=P.reduce((s,p)=>s+vatTotals(p.lines).gross,0);
+  return `<div class="card" style="${isNow?'border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-l)':''}"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Q${qn} ${y} <span class="sub">${['jan–mrt','apr–jun','jul–sep','okt–dec'][qn-1]}</span></h2>${a?.locked?'<span class="tag g">🔒 aangegeven</span>':isNow?'<span class="tag b">lopend</span>':chk?'<span class="tag a">⚠ '+chk+' te controleren</span>':(P.length+Sa.length?'<span class="tag gr">open</span>':'')}</div>
+  <table style="margin-top:8px"><tr><td>⬆ Verkoopfacturen</td><td class="num"><b>${Sa.length}</b></td><td class="num">${fmt(sumS)}</td><td class="num"><button class="btn ghost sm" onclick="goList('verkoop','${y}','${qn}')">bekijk</button></td></tr>
+  <tr><td>⬇ Inkoopfacturen</td><td class="num"><b>${P.length-bons.length}</b></td><td class="num">${fmt(sumP-bons.reduce((s,p)=>s+vatTotals(p.lines).gross,0))}</td><td class="num"><button class="btn ghost sm" onclick="goList('inkoop','${y}','${qn}')">bekijk</button></td></tr>
+  <tr><td>🧾 Bonnen</td><td class="num"><b>${bons.length}</b></td><td class="num">${fmt(bons.reduce((s,p)=>s+vatTotals(p.lines).gross,0))}</td><td></td></tr>
+  <tr><td>BTW ${r.r5c>=0?'te betalen':'terug'}</td><td></td><td class="num"><b class="${r.r5c>=0?'neg':'pos'}">${fmt(Math.abs(r.r5c))}</b></td><td class="num"><button class="btn ghost sm" onclick="btwSel={year:'${y}',q:'${qn}'};location.hash='#btw'">aangifte</button></td></tr></table>
+  <div class="sub" style="margin-top:6px">Aangifte + betaling uiterlijk ${deadline.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
+  <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" class="noprint"><button class="btn sec sm" onclick="flt.year='${y}';flt.q='${qn}';exportCsv('alles')">⬇ CSV kwartaal</button><button class="btn sec sm" onclick="flt.year='${y}';flt.q='${qn}';exportAttachments()">⬇ Alle bonnen/PDF's</button></div></div>`}).join('');
+ document.getElementById('page').innerHTML=`<div class="filters noprint"><div><label>Jaar</label><select onchange="kwYear=this.value;render()">${years.map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select></div><div class="sub" style="align-self:center">Elke bon/factuur wordt op <b>factuurdatum</b> automatisch in het juiste kwartaal gezet. Inkoop/verkoop en bon/factuur bepaalt de AI bij het uploaden.</div></div><div class="grid g2">${cards}</div>`;
+}
+function goList(page,y,qn){flt.year=y;flt.q=String(qn);flt.status='all';flt.search='';location.hash='#'+page}
+
+/* ================== DASHBOARD ================== */
+function renderDashboard(){
+ const y=new Date().getFullYear();const q=quarterOf(today());
+ const P=myP(),Sa=myS();
+ const sumP=P.filter(p=>p.date&&p.date.startsWith(String(y))).reduce((a,p)=>{const t=vatTotals(p.lines);a.net+=t.net;a.vat+=p.vatDeductible===false?0:t.vat;return a},{net:0,vat:0});
+ const sumS=Sa.filter(p=>p.date&&p.date.startsWith(String(y))).reduce((a,p)=>{const t=vatTotals(p.lines);a.net+=t.net;a.vat+=t.vat;return a},{net:0,vat:0});
+ const qP=P.filter(p=>inPeriod(p.date,y,q)),qS=Sa.filter(p=>inPeriod(p.date,y,q));
+ const qVat=btwCalc(String(y),q).r5c;
+ const openS=Sa.filter(s=>s.status!=='betaald'),openP=P.filter(s=>s.status!=='betaald');
+ const unread=myB().filter(b=>!b.matchId&&!b.ignored).length;
+ const recent=[...P.map(p=>({...p,t:'in'})),...Sa.map(p=>({...p,t:'uit'}))].sort((a,b)=>(b.created||'').localeCompare(a.created||'')).slice(0,8);
+ document.getElementById('page').innerHTML=`
+ <div class="grid g3" style="margin-bottom:16px">
+  <div class="kpi"><div class="l">Omzet ${y} (excl. btw)</div><div class="v pos">${fmt(sumS.net)}</div><div class="s">${Sa.length} verkoopfacturen</div></div>
+  <div class="kpi"><div class="l">Kosten ${y} (excl. btw)</div><div class="v">${fmt(sumP.net)}</div><div class="s">${P.length} inkoopfacturen/bonnen</div></div>
+  <div class="kpi"><div class="l">Resultaat ${y} (indicatief)</div><div class="v ${sumS.net-sumP.net>=0?'pos':'neg'}">${fmt(sumS.net-sumP.net)}</div><div class="s">omzet − kosten</div></div>
+  <div class="kpi"><div class="l">BTW Q${q} ${y} ${qVat>=0?'te betalen':'terug te vragen'}</div><div class="v ${qVat>=0?'neg':'pos'}">${fmt(Math.abs(qVat))}</div><div class="s"><a href="#btw" class="link">Naar aangifte →</a></div></div>
+ </div>
+ <div class="grid g2">
+  <div class="card"><h2>Snel toevoegen</h2>
+   <div class="drop" onclick="document.getElementById('hiddenUpload').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="event.preventDefault();this.classList.remove('over');handleFiles(event.dataTransfer.files)"><b>📷 Sleep bonnen of facturen hierheen</b>Foto of PDF · AI leest leverancier, datum, btw en bedragen automatisch</div>
+   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><a class="btn" href="#snel">📷 Snelscan (telefoon)</a><button class="btn sec" onclick="openInvoice('purchase')">+ Inkoop handmatig</button><button class="btn sec" onclick="openInvoice('sale')">+ Verkoopfactuur</button><button class="btn sec" onclick="document.getElementById('hiddenBank').click()">Bank importeren</button></div>
+   ${!isOwner()?'<div class="warn">👁 Je bent ingelogd als boekhouder (alleen lezen). Je kunt alles bekijken en exporteren, maar niet wijzigen.</div>':''}
+  </div>
+  <div class="card"><h2>Openstaand</h2>
+   <table><tr><td>Openstaande verkoopfacturen</td><td class="num"><b>${openS.length}</b> · ${fmt(openS.reduce((a,s)=>a+vatTotals(s.lines).gross,0))}</td></tr>
+   <tr><td>Onbetaalde inkoopfacturen</td><td class="num"><b>${openP.length}</b> · ${fmt(openP.reduce((a,s)=>a+vatTotals(s.lines).gross,0))}</td></tr>
+   <tr><td>Bankmutaties nog te koppelen</td><td class="num"><b>${unread}</b> ${unread?'<a href="#bank" class="link">koppelen →</a>':''}</td></tr></table>
+  </div>
+ </div>
+ <div class="card"><h2>Laatst toegevoegd</h2><div class="tablewrap"><table><tr><th>Type</th><th>Datum</th><th>Relatie</th><th>Nr</th><th class="num">Excl.</th><th class="num">BTW</th><th class="num">Incl.</th><th>Status</th></tr>
+ ${recent.length?recent.map(p=>{const t=vatTotals(p.lines);return `<tr style="cursor:pointer" onclick="openInvoice('${p.t==='in'?'purchase':'sale'}','${p.id}')"><td><span class="tag ${p.t==='in'?'gr':'b'}">${p.t==='in'?'Inkoop':'Verkoop'}</span></td><td>${fdate(p.date)}</td><td>${esc(p.party)}</td><td>${esc(p.nr)}</td><td class="num">${fmt(t.net)}</td><td class="num">${fmt(t.vat)}</td><td class="num"><b>${fmt(t.gross)}</b></td><td>${statusTag(p)}</td></tr>`}).join(''):'<tr><td colspan="8" class="empty">Nog niets toegevoegd</td></tr>'}</table></div></div>`;
+}
+function statusTag(p){if(p.needsCheck&&typeof findDup==='function'&&findDup(p))return'<span class="tag r">🚫 Dubbel?</span>';if(p.status==='betaald')return'<span class="tag g">✓ Betaald</span>';if(p.needsCheck)return'<span class="tag a">Controleren</span>';if(p.due&&p.due<today())return'<span class="tag r">✓ Verlopen</span>';return'<span class="tag b">✓ Open</span>'}
+</script>
+<script>
+/* ================== BESTANDEN & AI LEZEN ================== */
+async function compressImage(file){
+ if(!file.type.startsWith('image/'))return file;
+ try{const bmp=await createImageBitmap(file);const max=2000;let w=bmp.width,h=bmp.height;const sc=Math.min(1,max/Math.max(w,h));w=Math.round(w*sc);h=Math.round(h*sc);
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(bmp,0,0,w,h);
+  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.86));return blob||file}catch(e){return file}
+}
+function blobToB64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(blob)})}
+function newInvoice(type){return{id:uid(),company:S.active,type,party:'',partyBtw:'',partyEmail:'',nr:'',date:today(),due:'',lines:[{rate:21,net:0,vat:0}],cat:type==='purchase'?'Materiaal':'Omzet',desc:'',status:'open',paidDate:'',payMethod:'',vatDeductible:true,needsCheck:false,fileId:null,fileType:'',fileName:'',created:new Date().toISOString(),ai:null,reverse:false,reminders:[]}}
+const PAY_METHODS=[['','Onbekend'],['bank','Bank / overgemaakt'],['contant','Contant'],['pin','Pin'],['creditcard','Creditcard'],['anders','Anders']];
+function payMethodTag(p){if(!p.payMethod)return'';const lbl={bank:'🏦 Bank',contant:'💶 Contant',pin:'💳 Pin',creditcard:'💳 Creditcard',anders:'Anders'}[p.payMethod]||'';return lbl?`<span class="tag gr" title="Betaalwijze">${lbl}</span>`:''}
+function unknownAccountTag(p){return p.unknownAccount?`<span class="tag a" title="Op de bon/factuur staat een ander rekeningnummer dan onze eigen bankrekening (${esc(p.docIban||'')}). Controleer of dit wel bij onze administratie hoort.">❓ Onbekende bon (andere rekening)</span>`:''}
+function findDup(inv){const g=r2(vatTotals(inv.lines).gross);const party=(inv.party||'').trim().toLowerCase();const nr=(inv.nr||'').trim().toLowerCase();return listOf(inv.type).find(x=>x.id!==inv.id&&x.company===inv.company&&(( nr&&(x.nr||'').trim().toLowerCase()===nr&&(x.party||'').trim().toLowerCase()===party)||(g&&Math.abs(vatTotals(x.lines).gross-g)<0.01&&x.date===inv.date&&(x.party||'').trim().toLowerCase()===party)))||null}
+const SCHEMES=[['normal','Normaal (btw op factuur)'],['nl_reverse','BTW verlegd — binnenland (bouw/onderaanneming)'],['eu','EU — btw verlegd (ICP)'],['non_eu','Buiten EU (export/import)']];
+function invoiceChecks(i){const w=[];if(!i.nr)w.push('factuurnummer ontbreekt (moet doorlopend/uniek zijn)');if(!i.date)w.push('factuurdatum ontbreekt');if(!i.party)w.push(i.type==='sale'?'naam klant ontbreekt':'naam leverancier ontbreekt');const sch=schemeOf(i);if(sch!=='normal'&&!i.partyBtw)w.push('btw-nummer van de tegenpartij is verplicht bij btw verlegd');if(sch==='normal'&&i.lines.some(l=>l.rate>0&&l.net>0&&!l.vat))w.push('btw-bedrag ontbreekt bij een belast tarief');if(i.type==='sale'&&!i.fileId)w.push('geen factuurkopie bijgevoegd (bewaarplicht 7 jaar)');return w}
+function schemeOf(i){return i.vatScheme||(i.reverse?'nl_reverse':'normal')}
+function moveInv(inv,type){if(inv.type===type)return;S.purchases=S.purchases.filter(x=>x.id!==inv.id);S.sales=S.sales.filter(x=>x.id!==inv.id);inv.type=type;inv.cat=type==='purchase'?(CATS.includes(inv.cat)?inv.cat:'Materiaal'):'Omzet';listOf(type).unshift(inv)}
+function listOf(type){return type==='purchase'?S.purchases:S.sales}
+function findInv(id){return S.purchases.find(p=>p.id===id)||S.sales.find(p=>p.id===id)}
+
+async function handleFiles(files,type='purchase'){
+ if(!isOwner()){toast('Alleen-lezen account: uploaden niet mogelijk');return}
+ files=[...files].filter(f=>f.type.startsWith('image/')||f.type==='application/pdf');
+ if(!files.length){toast('Alleen foto\'s (JPG/PNG) of PDF');return}
+ const list=listOf(type);const created=[];let done=0;
+ const batchCompany=S.active; /* vastzetten bij start: als je halverwege een grote upload van bedrijf wisselt, moeten deze bestanden toch bij het juiste bedrijf terechtkomen */
+ const prog=(msg)=>toast(msg,120000);
+ prog(`⬆ Uploaden 0/${files.length}…`);
+ // uploaden, 3 tegelijk
+ await runPool(files,3,async f=>{
+  const blob=await compressImage(f);const fid=uid();
+  try{await putFile(fid,{blob,type:blob.type||f.type,name:f.name})}catch(e){toast('❌ '+esc(f.name)+': '+esc(e.message),6000);return}
+  const inv=newInvoice(type);inv.company=batchCompany;inv.fileId=fid;inv.fileType=blob.type||f.type;inv.fileName=f.name;inv.needsCheck=true;inv.party=f.name.replace(/\.[^.]+$/,'');
+  list.unshift(inv);created.push(inv);done++;prog(`⬆ Uploaden ${done}/${files.length}…`);
+ });
+ save();if(!created.length)return;
+ if(S.settings.autoRead){
+  let read=0;prog(`🤖 AI leest 0/${created.length}…`);
+  await runPool(created,3,async inv=>{try{await aiRead(inv)}catch(e){inv.ai={error:e.message};inv.aiHint='AI-lezen mislukt: '+e.message}read++;prog(`🤖 AI leest ${read}/${created.length}…`);if(read%5===0)save()});
+  save();
+ }
+ const perQ={};created.forEach(i=>{const k=i.date?`Q${quarterOf(i.date)} ${i.date.slice(0,4)}`:'?';perQ[k]=(perQ[k]||0)+1});const nS=created.filter(i=>i.type==='sale').length,nP=created.length-nS,nB=created.filter(i=>i.docType==='bon').length;
+ const dups=created.filter(i=>findDup(i)).length;
+ toast(`✅ ${created.length} verwerkt → ${nP} inkoop (${nB} bonnen), ${nS} verkoop · ${Object.entries(perQ).map(([k,v])=>k+': '+v).join(', ')}${dups?` · <b style="color:#fca5a5">🚫 ${dups} mogelijk dubbel</b>`:''} — controleer ze nu één voor één`,9000);
+ const page=type==='purchase'?'inkoop':'verkoop';
+ if(cur!==page)location.hash='#'+page;else render();
+ reviewQueue=created.map(i=>i.id);
+ const first=created[created.length-1];openInvoice(first.type,first.id,false);
+}
+/* ================== SNELSCAN (telefoon) ================== */
+let snapItems=[];let aiSlots=0;const AI_MAX=3;const aiWait=[];
+function aiAcquire(){return new Promise(res=>{if(aiSlots<AI_MAX){aiSlots++;res()}else aiWait.push(res)})}
+function aiRelease(){aiSlots--;const n=aiWait.shift();if(n){aiSlots++;n()}}
+function snapAdd(files){if(!isOwner()){toast('Alleen-lezen account');return}[...files].filter(f=>f.type.startsWith('image/')||f.type==='application/pdf').forEach(f=>processSnap(f))}
+async function processSnap(f){
+ const inv=newInvoice('purchase');inv.needsCheck=true;inv.party='';inv.fileName=f.name;inv.fileId=uid();inv.fileType='image/jpeg';
+ const it={id:inv.id,name:f.name,status:'upload',msg:'uploaden…',thumb:URL.createObjectURL(f)};snapItems.unshift(it);S.purchases.unshift(inv);renderSnapList();
+ try{const blob=await compressImage(f);inv.fileType=blob.type||f.type;await putFile(inv.fileId,{blob,type:inv.fileType,name:f.name});save();
+  if(S.settings.autoRead){it.status='ai';it.msg='AI leest…';renderSnapList();await aiAcquire();try{await aiRead(inv)}finally{aiRelease()}
+   const live=findInv(inv.id)||inv;it.status=findDup(live)?'dup':'done';it.msg=(live.party||'?')+' · '+fmt(vatTotals(live.lines).gross)+(live.date?' · Q'+quarterOf(live.date):'')+(live.type==='sale'?' · verkoop':'')+(it.status==='dup'?' · 🚫 dubbel?':'');}
+  else{it.status='done';it.msg='geüpload (nog lezen)'}
+ }catch(e){it.status='error';it.msg='❌ '+e.message;inv.aiHint='Verwerken mislukt: '+e.message}
+ save();renderSnapList();
+}
+function renderSnapList(){const el=document.getElementById('snapList');if(!el)return;const busy=snapItems.filter(x=>x.status==='upload'||x.status==='ai').length,done=snapItems.filter(x=>x.status==='done'||x.status==='dup').length,err=snapItems.filter(x=>x.status==='error').length;
+ const c=document.getElementById('snapCount');if(c)c.innerHTML=`<b>${snapItems.length}</b> foto's · ${done} gelezen${busy?` · <span class="spin" style="display:inline-block;width:12px;height:12px;vertical-align:middle"></span> ${busy} bezig`:''}${err?` · <span class="neg">${err} fout</span>`:''}`;
+ el.innerHTML=snapItems.map(x=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)"><img src="${x.thumb}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;background:#eee"><div style="flex:1;min-width:0"><div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.status==='done'?'✅ ':x.status==='dup'?'🚫 ':x.status==='error'?'':'⏳ '}${esc(x.msg)}</div></div>${x.status==='done'||x.status==='dup'||x.status==='error'?`<button class="btn ghost sm" onclick="const i=findInv('${x.id}');if(i)openInvoice(i.type,i.id,false)">open</button>`:''}</div>`).join('')||'<div class="empty">Nog geen foto\'s — druk op de grote knop</div>';
+ const d=document.getElementById('snapDone');if(d){const n=[...S.purchases,...S.sales].filter(i=>i.company===S.active&&i.needsCheck).length;d.textContent=`✅ Klaar — controleren (${n})`;d.disabled=busy>0}}
+function renderSnel(){document.getElementById('pageActions').innerHTML='';
+ document.getElementById('page').innerHTML=`<div class="card" style="text-align:center">
+  <input type="file" id="snapCam" accept="image/*" capture="environment" style="display:none" onchange="snapAdd(this.files);this.value=''">
+  <input type="file" id="snapGal" accept="image/*,application/pdf" multiple style="display:none" onchange="snapAdd(this.files);this.value=''">
+  <button class="btn" style="font-size:20px;padding:22px 30px;width:100%;max-width:420px" onclick="document.getElementById('snapCam').click()">📷 Foto maken</button>
+  <div style="margin-top:10px"><button class="btn sec" onclick="document.getElementById('snapGal').click()">🖼 Uit galerij / meerdere</button></div>
+  <div class="sub" style="margin-top:10px">Maak foto na foto — niet wachten. De AI leest op de achtergrond. Als je klaar bent: controleren.</div>
+  <div id="snapCount" style="margin-top:12px;font-size:14px"></div></div>
+  <div class="card"><div id="snapList"></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="snapDone" onclick="snapFinish()">✅ Klaar — controleren</button><button class="btn ghost" onclick="snapItems=[];renderSnapList()">Lijst leegmaken</button></div></div>`;renderSnapList()}
+function snapFinish(){const nx=nextToCheck('purchase');if(!nx){toast('Niets te controleren 🎉');return}reviewQueue=snapItems.map(x=>x.id);openInvoice(nx.type,nx.id,false)}
+async function runPool(items,n,fn){let i=0;const w=[];for(let k=0;k<Math.min(n,items.length);k++)w.push((async()=>{while(i<items.length){const it=items[i++];await fn(it)}})());await Promise.all(w)}
+let reviewQueue=[];
+function nextToCheck(type){const ids=reviewQueue.filter(id=>{const x=findInv(id);return x&&x.needsCheck});if(ids.length)return findInv(ids[0]);return listOf(type).find(x=>x.company===S.active&&x.needsCheck)||listOf(type==='sale'?'purchase':'sale').find(x=>x.company===S.active&&x.needsCheck)||null}
+
+const AI_PROMPT=`Je bent een Nederlandse boekhoudassistent. Lees deze factuur/bon en geef ALLEEN geldige JSON terug (geen uitleg, geen markdown):
+{"document_type":"inkoopfactuur|verkoopfactuur|bon|creditnota|anders",
+"supplier":"naam leverancier/afzender",
+"supplier_btw":"btw-nummer afzender of leeg",
+"customer":"naam ontvanger/klant of leeg",
+"customer_email":"e-mailadres van de klant/ontvanger, alleen als dat letterlijk op de factuur staat, anders leeg",
+"invoice_number":"factuur- of bonnummer",
+"invoice_date":"YYYY-MM-DD",
+"due_date":"YYYY-MM-DD of leeg",
+"currency":"EUR",
+"vat_lines":[{"rate":21,"net":0.00,"vat":0.00}],
+"total_excl":0.00,"total_vat":0.00,"total_incl":0.00,
+"vat_reverse_charged":false,
+"category":"een van: ${CATS.join(', ')}",
+"description":"korte omschrijving van wat gekocht is (max 10 woorden)",
+"payment_method":"bank|contant|pin|creditcard|onbekend — kijk op de bon/factuur naar tekst zoals 'CONTANT', 'PIN', 'PINNEN', 'Creditcard', 'iDEAL', 'Bank', 'Overgemaakt', 'Betaald via bank'. Staat er niets over betaalwijze: onbekend.",
+"iban_on_document":"het IBAN-rekeningnummer dat op de bon/factuur staat als rekening waarnaar/waarvandaan betaald is (bv. bij 'Betaald via bank' of in de betaalgegevens), zonder spaties, in hoofdletters. Leeg als er geen IBAN op de bon/factuur staat.",
+"confidence":0.0,
+"notes":"opmerkingen, bv onleesbaar of twijfel"}
+Regels: bedragen als getallen met punt als decimaal. Splits per btw-tarief (21, 9, 0). Bij 'btw verlegd' zet vat_reverse_charged true en rate 0. Bij een creditnota: bedragen negatief. Als een bedrag niet leesbaar is: bereken het uit de andere bedragen. total_incl moet gelijk zijn aan total_excl + total_vat.`;
+
+async function aiRead(inv){
+ if(!inv.fileId)throw new Error('Geen bijlage');
+ const {data:{session}}=await sb.auth.getSession();if(!session)throw new Error('Niet ingelogd');
+ const res=await fetch(SUPABASE_URL+'/functions/v1/lees-factuur',{method:'POST',headers:{'content-type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({fileId:inv.fileId,model:S.settings.model||'claude-sonnet-4-6'})});
+ let j;try{j=await res.json()}catch(e){throw new Error('Serverfout '+res.status)}
+ if(!res.ok||j.error)throw new Error(j.error||('Serverfout '+res.status));
+ applyAi(inv,j.result);return j.result;
+}
+function applyAi(inv,d){
+ inv.ai={confidence:d.confidence,notes:d.notes,docType:d.document_type,readAt:new Date().toISOString()};
+ const own=x=>{const n=normS(x),c=comp();if(!n)return false;const a=normS(c.name),b=normS(c.short);return (a&&(n.includes(a)||a.includes(n)))||(b&&b.length>3&&(n.includes(b)||b.includes(n)))};
+ const isSale=inv.type==='sale'||d.document_type==='verkoopfactuur'||own(d.supplier);
+ let party=isSale?(d.customer||d.supplier):(d.supplier||d.customer);
+ if(own(party))party=isSale?d.supplier:d.customer;/* AI verwisselde afzender/ontvanger */
+ if(own(party))party='';
+ inv.party=party||inv.party;
+ inv.docType=(['bon','inkoopfactuur','verkoopfactuur','creditnota'].includes(d.document_type)?d.document_type:'anders');
+ /* automatisch indelen inkoop/verkoop */
+ const looksSale=d.document_type==='verkoopfactuur'||(own(d.supplier)&&!own(d.customer));
+ const looksPurchase=d.document_type==='inkoopfactuur'||d.document_type==='bon'||(own(d.customer)&&!own(d.supplier));
+ if(inv.type==='purchase'&&looksSale&&!looksPurchase){moveInv(inv,'sale');inv.aiHint='Automatisch ingedeeld als VERKOOP (factuur van je eigen bedrijf).'}
+ else if(inv.type==='sale'&&looksPurchase&&!looksSale){moveInv(inv,'purchase');inv.aiHint='Automatisch ingedeeld als INKOOP (factuur/bon van een leverancier).'}
+ if(inv.type==='sale'){inv.party=own(inv.party)?(d.customer||''):inv.party;if(!inv.party&&d.customer&&!own(d.customer))inv.party=d.customer;if(!['Omzet','Omzet diensten','Omzet materiaal','Overig'].includes(inv.cat))inv.cat='Omzet'}
+ inv.partyBtw=isSale?(own(d.supplier)?'':d.supplier_btw||''):(d.supplier_btw||'');inv.partyEmail=(d.customer_email||inv.partyEmail||'').trim();inv.nr=d.invoice_number||'';inv.date=normDate(d.invoice_date)||inv.date;inv.due=normDate(d.due_date)||'';
+ inv.reverse=!!d.vat_reverse_charged;
+ let lines=(d.vat_lines||[]).map(l=>({rate:[21,9,0].includes(Number(l.rate))?Number(l.rate):21,net:r2(parseNum(l.net)),vat:r2(parseNum(l.vat))})).filter(l=>l.net||l.vat);
+ const ti=r2(parseNum(d.total_incl)),te=r2(parseNum(d.total_excl)),tv=r2(parseNum(d.total_vat));
+ if(!lines.length){ if(te||tv)lines=[{rate:te&&tv?Math.round(tv/te*100):21,net:te,vat:tv}]; else if(ti){lines=[{rate:21,net:r2(ti/1.21),vat:r2(ti-ti/1.21)}]} else lines=[{rate:21,net:0,vat:0}]; }
+ lines.forEach(l=>{if(![21,9,0].includes(l.rate))l.rate=21});
+ const t=vatTotals(lines);inv.aiWarn='';
+ if(ti&&Math.abs(t.gross-ti)>0.05)inv.aiWarn=`Som van btw-regels (${fmt(t.gross)}) wijkt af van totaal op factuur (${fmt(ti)}). Controleer de bedragen.`;
+ inv.lines=lines;
+ if(CATS.includes(d.category))inv.cat=d.category;
+ inv.desc=d.description||inv.desc;inv.needsCheck=true;
+ const pm=['bank','contant','pin','creditcard'].includes(d.payment_method)?d.payment_method:'';if(pm)inv.payMethod=pm;
+ /* Contant/pin/creditcard betaalde bonnen verschijnen nooit op de zakelijke bank — meteen als betaald markeren zodat ze niet als "nog niet gezien op bank" blijven hangen */
+ if(['contant','pin','creditcard'].includes(inv.payMethod)&&!inv.bankRef&&inv.status!=='betaald'){inv.status='betaald';inv.paidDate=inv.paidDate||inv.date}
+ /* Staat er een IBAN op de bon/factuur die NIET van ons eigen bedrijf is (terwijl de betaalwijze "bank" is)?
+    Dan is dit waarschijnlijk niet via onze eigen bankrekening betaald — bv. een andere onderneming, een
+    privérekening, of een verkeerd gescande bon. Zo'n bon markeren we als "onbekende bon" zodat hij niet
+    stilzwijgend meetelt alsof hij via onze rekening is gegaan. */
+ const normIban=s=>String(s||'').replace(/[^A-Z0-9]/gi,'').toUpperCase();
+ const docIban=normIban(d.iban_on_document);const ownIban=normIban(comp()?.iban);
+ inv.docIban=d.iban_on_document||'';
+ inv.unknownAccount=!!(inv.payMethod==='bank'&&docIban&&ownIban&&docIban!==ownIban);
+ if(d.document_type==='verkoopfactuur')inv.aiHint='AI denkt dat dit een VERKOOPfactuur is (uitgaand). Klopt dat? Wijzig dan het type.';
+ if((d.confidence||1)<0.6)inv.aiHint=(inv.aiHint||'')+' Lage zekerheid — controleer alle velden.';
+ const dup=findDup(inv);inv.dupOf=dup?dup.id:null;
+}
+
+/* ================== FACTUUR MODAL ================== */
+let curInv=null,curBlobUrl=null;
+async function openInvoice(type,id,autoAi=false){
+ const found=id?findInv(id):null;if(id&&!found){toast('Factuur niet gevonden');return}
+ curInv=found?JSON.parse(JSON.stringify(found)):newInvoice(type);
+ if(!id)curInv.isNew=true;
+ const rest=listOf(curInv.type).filter(x=>x.company===S.active&&x.needsCheck&&x.id!==curInv.id).length;
+ document.getElementById('invModalTitle').textContent=(curInv.type==='purchase'?'Inkoopfactuur / bon':'Verkoopfactuur')+(curInv.isNew?' (nieuw)':'')+(rest?` · nog ${rest} te controleren`:'');
+ document.getElementById('aiStatus').innerHTML='';
+ await showPreview();renderInvForm();openModal('invModal');
+ if(autoAi&&curInv.fileId)aiReadCurrent();
+}
+async function showPreview(){
+ const pv=document.getElementById('invPreview');if(curBlobUrl){URL.revokeObjectURL(curBlobUrl);curBlobUrl=null}
+ const f=await getFile(curInv.fileId);
+ if(!f){pv.innerHTML='<div class="empty">Geen bijlage<br><span class="sub">Voeg een foto of PDF toe om AI te laten lezen</span></div>';return}
+ curBlobUrl=URL.createObjectURL(f.blob);
+ pv.innerHTML=f.type==='application/pdf'?`<iframe src="${curBlobUrl}"></iframe>`:`<img src="${curBlobUrl}" alt="bijlage">`;
+}
+async function replaceAttachment(file){if(!file)return;const blob=await compressImage(file);const fid=uid();await putFile(fid,{blob,type:blob.type||file.type,name:file.name});if(curInv.fileId)await delFile(curInv.fileId);curInv.fileId=fid;curInv.fileType=blob.type||file.type;curInv.fileName=file.name;await showPreview();if(S.settings.autoRead)aiReadCurrent()}
+async function aiReadCurrent(){
+ const st=document.getElementById('aiStatus');
+  if(!curInv.fileId){st.innerHTML='<div class="warn">Voeg eerst een bijlage toe.</div>';return}
+ readForm();st.innerHTML='<div class="aibox"><div class="spin"></div><div><b>AI leest de factuur…</b><div class="sub">Leverancier, datum, btw-tarieven en bedragen worden herkend</div></div></div>';
+ document.getElementById('reReadBtn').disabled=true;
+ try{const d=await aiRead(curInv);renderInvForm();st.innerHTML=`<div class="ok">✅ Gelezen (zekerheid ${Math.round((d.confidence||0)*100)}%). <b>Controleer de velden en klik Opslaan.</b>${d.notes?'<div class="sub">'+esc(d.notes)+'</div>':''}${curInv.unknownAccount?`<div class="warn" style="margin-top:6px">❓ Op deze bon/factuur staat een ANDER rekeningnummer (${esc(curInv.docIban)}) dan onze eigen bankrekening. Controleer of dit wel bij onze administratie hoort.</div>`:''}</div>`}
+ catch(e){st.innerHTML='<div class="err">❌ AI-lezen mislukt: '+esc(e.message)+'<br><span class="sub">Vul de gegevens handmatig in of probeer opnieuw.</span></div>'}
+ document.getElementById('reReadBtn').disabled=false;
+}
+function renderInvForm(){
+ const i=curInv,isP=i.type==='purchase';
+ const t=vatTotals(i.lines);
+ document.getElementById('invForm').innerHTML=`
+ ${(()=>{const d=findDup(i);if(!d)return'';return `<div class="err">🚫 <b>Mogelijk dubbele factuur!</b> Bestaat al: ${esc(d.party)} · nr ${esc(d.nr||'-')} · ${fdate(d.date)} · ${fmt(vatTotals(d.lines).gross)} ${d.needsCheck?'(nog te controleren)':'(goedgekeurd)'}<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn danger sm" onclick="deleteInvoice(true)">Deze verwijderen (dubbel)</button><button class="btn ghost sm" onclick="openInvoice('${d.type}','${d.id}')">Bekijk de andere</button></div></div>`})()}${(()=>{const w=invoiceChecks(i);return w.length?'<div class="warn">📋 <b>Factuureisen Belastingdienst:</b> '+w.map(esc).join(' · ')+'</div>':''})()}${i.aiWarn?'<div class="warn">⚠️ '+esc(i.aiWarn)+'</div>':''}${i.aiHint?'<div class="warn">'+esc(i.aiHint)+'</div>':''}
+ <div class="row"><div class="field"><label>Type</label><select id="f_type" onchange="changeType(this.value)"><option value="purchase" ${isP?'selected':''}>Inkoop (kosten)</option><option value="sale" ${!isP?'selected':''}>Verkoop (omzet)</option></select></div>
+ <div class="field"><label>Status</label><select id="f_status"><option value="open" ${i.status!=='betaald'?'selected':''}>Open</option><option value="betaald" ${i.status==='betaald'?'selected':''}>Betaald</option></select></div>
+ <div class="field"><label>Betaalwijze</label><select id="f_paymethod">${PAY_METHODS.map(([v,l])=>`<option value="${v}" ${i.payMethod===v?'selected':''}>${l}</option>`).join('')}</select></div>
+ ${S.companies.length>1?`<div class="field"><label>Bedrijf</label><select id="f_company">${S.companies.map(cc=>`<option value="${cc.id}" ${(i.company||S.active)===cc.id?'selected':''}>${esc(cc.short)}</option>`).join('')}</select></div>`:''}</div>
+ <div class="row"><div class="field" style="flex:2"><label>${isP?'Leverancier':'Klant'}</label><input id="f_party" value="${esc(i.party)}" list="partyList"><datalist id="partyList">${[...new Set(listOf(i.type).filter(p=>p.company===S.active).map(p=>p.party))].map(p=>`<option value="${esc(p)}">`).join('')}</datalist></div>
+ <div class="field"><label>BTW-nr ${isP?'leverancier':'klant'}</label><input id="f_partyBtw" value="${esc(i.partyBtw)}"></div></div>
+ ${!isP?`<div class="row"><div class="field"><label>E-mail klant</label><input id="f_partyEmail" type="email" value="${esc(i.partyEmail||'')}" placeholder="voor betalingsherinneringen"></div></div>`:''}
+ <div class="row"><div class="field"><label>Factuurnummer</label><input id="f_nr" value="${esc(i.nr)}"></div><div class="field"><label>Factuurdatum</label><input id="f_date" type="date" value="${i.date}"></div><div class="field"><label>Vervaldatum</label><input id="f_due" type="date" value="${i.due||''}"></div></div>
+ <div class="row"><div class="field"><label>${isP?'Kostensoort':'Categorie'}</label><select id="f_cat">${(isP?CATS:['Omzet','Omzet diensten','Omzet materiaal','Overig']).map(c=>`<option ${c===i.cat?'selected':''}>${c}</option>`).join('')}</select></div><div class="field" style="flex:2"><label>Omschrijving</label><input id="f_desc" value="${esc(i.desc)}"></div></div>
+ <label>BTW-regels (bedragen excl. btw per tarief)</label>
+ <div id="vatLines">${i.lines.map((l,k)=>vatRowHtml(l,k)).join('')}</div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 10px"><button class="btn ghost sm" onclick="addLine()">+ tarief toevoegen</button>
+  <span class="sub">Snel: totaal incl.</span><input id="f_quick" type="number" step="0.01" style="width:110px" placeholder="0,00"><select id="f_quickRate" style="width:80px"><option value="21">21%</option><option value="9">9%</option><option value="0">0%</option></select><button class="btn ghost sm" onclick="quickSplit()">Splits</button></div>
+ <div class="row"><div class="field"><label>BTW-regeling (aangifte-rubriek)</label><select id="f_scheme">${SCHEMES.map(([k,l])=>`<option value="${k}" ${schemeOf(i)===k?'selected':''}>${l}</option>`).join('')}</select><div class="sub">${isP?'Verlegd binnenland → rubriek 2a · EU → 4b · buiten EU → 4a':'Verlegd binnenland → rubriek 1e · EU → 3b (+ICP-opgaaf) · buiten EU → 3a'}</div></div>${isP?`<label class="chk"><input type="checkbox" id="f_ded" ${i.vatDeductible!==false?'checked':''}> BTW aftrekbaar (voorbelasting)</label>`:''}</div>
+ <div class="totals"><div><span>Subtotaal excl. btw</span><b id="t_net">${fmt(t.net)}</b></div><div><span>BTW</span><b id="t_vat">${fmt(t.vat)}</b></div><div class="big"><span>Totaal incl. btw</span><span id="t_gross">${fmt(t.gross)}</span></div></div>
+ <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">${(()=>{const n=listOf(i.type).filter(x=>x.company===S.active&&x.needsCheck&&x.id!==i.id).length;return n?`<button class="btn" onclick="saveInvoice(true)">✅ Opslaan & volgende (${n})</button><button class="btn sec" onclick="saveInvoice()">Opslaan</button>`:`<button class="btn" onclick="saveInvoice()">💾 Opslaan${i.needsCheck?' & goedkeuren':''}</button>`})()}${!i.isNew?'<button class="btn danger" onclick="deleteInvoice()">Verwijderen</button>':''}<button class="btn ghost" onclick="closeModal('invModal')">Annuleren</button></div>`;
+}
+function vatRowHtml(l,k){return `<div class="vatrow" data-k="${k}"><div><label>Tarief</label><select class="l_rate" onchange="recalcLine(${k},'rate')"><option value="21" ${l.rate==21?'selected':''}>21%</option><option value="9" ${l.rate==9?'selected':''}>9%</option><option value="0" ${l.rate==0?'selected':''}>0%</option></select></div><div><label>Excl. btw</label><input type="number" step="0.01" class="l_net" value="${l.net}" oninput="recalcLine(${k},'net')"></div><div><label>BTW-bedrag</label><input type="number" step="0.01" class="l_vat" value="${l.vat}" oninput="recalcLine(${k},'vat')"></div><button class="btn ghost sm" style="height:36px" onclick="removeLine(${k})">✕</button></div>`}
+function readLines(){return [...document.querySelectorAll('#vatLines .vatrow')].map(r=>({rate:Number(r.querySelector('.l_rate').value),net:r2(parseFloat(r.querySelector('.l_net').value)||0),vat:r2(parseFloat(r.querySelector('.l_vat').value)||0)}))}
+function recalcLine(k,what){const r=document.querySelector(`#vatLines .vatrow[data-k="${k}"]`);const rate=Number(r.querySelector('.l_rate').value),net=parseFloat(r.querySelector('.l_net').value)||0;if(what!=='vat')r.querySelector('.l_vat').value=r2(net*rate/100);updateTotals()}
+function updateTotals(){const t=vatTotals(readLines());document.getElementById('t_net').textContent=fmt(t.net);document.getElementById('t_vat').textContent=fmt(t.vat);document.getElementById('t_gross').textContent=fmt(t.gross)}
+function addLine(){readForm();curInv.lines.push({rate:9,net:0,vat:0});renderInvForm()}
+function removeLine(k){readForm();curInv.lines.splice(k,1);if(!curInv.lines.length)curInv.lines.push({rate:21,net:0,vat:0});renderInvForm()}
+function quickSplit(){const g=parseFloat(document.getElementById('f_quick').value)||0,rate=Number(document.getElementById('f_quickRate').value);if(!g)return;readForm();const net=r2(g/(1+rate/100));curInv.lines=[{rate,net,vat:r2(g-net)}];renderInvForm()}
+function changeType(v){readForm();curInv.type=v;curInv.cat=v==='purchase'?'Materiaal':'Omzet';document.getElementById('invModalTitle').textContent=(v==='purchase'?'Inkoopfactuur / bon':'Verkoopfactuur');renderInvForm()}
+function readForm(){const g=id=>document.getElementById(id);if(!g('f_party'))return;const i=curInv;i.party=g('f_party').value.trim();i.partyBtw=g('f_partyBtw').value.trim();if(g('f_partyEmail'))i.partyEmail=g('f_partyEmail').value.trim();i.nr=g('f_nr').value.trim();i.date=g('f_date').value;i.due=g('f_due').value;i.cat=g('f_cat').value;i.desc=g('f_desc').value.trim();i.status=g('f_status').value;if(g('f_paymethod'))i.payMethod=g('f_paymethod').value;i.vatScheme=g('f_scheme').value;i.reverse=i.vatScheme!=='normal';if(g('f_ded'))i.vatDeductible=g('f_ded').checked;if(g('f_company'))i.company=g('f_company').value;i.lines=readLines()}
+function saveInvoice(andNext){
+ if(!isOwner()){toast('Alleen-lezen account');return}
+ readForm();const i=curInv;
+ if(!i.party){toast('Vul een relatie (leverancier/klant) in');return}
+ if(!i.date){toast('Vul een datum in');return}
+ if(isLocked(i.date)&&!confirm('Dit tijdvak is al aangegeven bij de Belastingdienst (afgesloten). Wijzigen betekent dat je een suppletie/correctie moet doen.\n\nToch opslaan?'))return;
+ const dup=findDup(i);if(dup&&!confirm(`Let op: deze factuur lijkt dubbel (${dup.party} ${dup.nr||''} ${fdate(dup.date)} ${fmt(vatTotals(dup.lines).gross)}).\n\nToch opslaan?`))return;i.dupOf=null;
+ if(i.status==='betaald'&&!i.paidDate)i.paidDate=today();if(i.status!=='betaald')i.paidDate='';
+ const movedCo=S.companies.find(c=>c.id===i.company&&c.id!==S.active);
+ i.needsCheck=false;i.aiWarn='';i.aiHint='';delete i.isNew;
+ S.purchases=S.purchases.filter(p=>p.id!==i.id);S.sales=S.sales.filter(p=>p.id!==i.id);
+ listOf(i.type).unshift(i);listOf(i.type).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ save();render();toast('✅ Opgeslagen: '+esc(i.party)+' · '+fmt(vatTotals(i.lines).gross)+(i.date?' · Q'+quarterOf(i.date)+' '+i.date.slice(0,4):'')+(movedCo?' · verplaatst naar '+esc(movedCo.short):''));
+ const nx=andNext?nextToCheck(i.type):null;
+ if(nx)openInvoice(nx.type,nx.id,false);else{closeModal('invModal');if(andNext)toast('🎉 Alles gecontroleerd!')}
+}
+async function deleteInvoice(quick){if(!quick&&!confirm('Deze factuur verwijderen?'))return;const i=curInv;const wasCheck=i.needsCheck;await delFile(i.fileId);S.purchases=S.purchases.filter(p=>p.id!==i.id);S.sales=S.sales.filter(p=>p.id!==i.id);S.bank.forEach(b=>{if(b.matchId===i.id)b.matchId=null;if(b.matchIds&&b.matchIds.includes(i.id)){b.matchIds=b.matchIds.filter(x=>x!==i.id);if(!b.matchIds.length){b.matchIds=null;b.matchId=null}else if(b.matchId===i.id)b.matchId=b.matchIds[0]}});save();render();toast('Verwijderd');const nx=quick&&wasCheck?nextToCheck(i.type):null;if(nx)openInvoice(nx.type,nx.id,false);else closeModal('invModal')}
+async function viewFile(fid){const f=await getFile(fid);if(!f){toast('Bijlage niet gevonden');return}const u=URL.createObjectURL(f.blob);window.open(u,'_blank')}
+
+/* ================== INKOOP / VERKOOP LIJSTEN ================== */
+let flt={year:String(new Date().getFullYear()),q:'all',search:'',status:'all'};
+function filterList(list){return list.filter(p=>(flt.year==='all'||inPeriod(p.date,flt.year,flt.q))&&(flt.status==='all'||(flt.status==='check'?p.needsCheck:flt.status==='checked'?!p.needsCheck:flt.status==='open'?(p.status!=='betaald'&&!p.needsCheck):p.status==='betaald'))&&(!flt.search||(p.party+' '+p.nr+' '+p.desc+' '+p.cat).toLowerCase().includes(flt.search.toLowerCase())))}
+function quarterBar(list){const y=flt.year==='all'?String(new Date().getFullYear()):flt.year;const q=[1,2,3,4].map(n=>{const l=list.filter(p=>inPeriod(p.date,y,n));return{n,c:l.length,chk:l.filter(p=>p.needsCheck).length,g:l.reduce((a,p)=>a+vatTotals(p.lines).gross,0)}});
+ return `<div class="steps noprint" style="gap:8px;flex-wrap:wrap">${q.map(x=>`<span style="cursor:pointer;padding:6px 12px;${flt.q==String(x.n)&&flt.year===y?'':''}" class="${flt.q==String(x.n)?'on':''}" onclick="flt.year='${y}';flt.q=flt.q=='${x.n}'?'all':'${x.n}';render()">Q${x.n} ${y}: <b>${x.c}</b> · ${fmt(x.g)}${x.chk?` · <span style="color:#f59e0b">⚠ ${x.chk}</span>`:''}</span>`).join('')}<span style="cursor:pointer;padding:6px 12px" class="${flt.q==='all'?'on':''}" onclick="flt.q='all';render()">Heel ${y}</span></div>`}
+function filterBar(){const years=[...new Set([...S.purchases,...S.sales].map(p=>(p.date||'').slice(0,4)).filter(Boolean).concat(String(new Date().getFullYear())))].sort().reverse();
+ return `<div class="filters noprint"><div><label>Jaar</label><select onchange="flt.year=this.value;render()"><option value="all" ${flt.year==='all'?'selected':''}>Alle</option>${years.map(y=>`<option ${flt.year===y?'selected':''}>${y}</option>`).join('')}</select></div>
+ <div><label>Periode</label><select onchange="flt.q=this.value;render()"><option value="all" ${flt.q==='all'?'selected':''}>Heel jaar</option>${[1,2,3,4].map(q=>`<option value="${q}" ${flt.q==String(q)?'selected':''}>Q${q}</option>`).join('')}${Array.from({length:12},(_,m)=>`<option value="m${m+1}" ${flt.q==='m'+(m+1)?'selected':''}>${new Date(2000,m,1).toLocaleString('nl-NL',{month:'long'})}</option>`).join('')}</select></div>
+ <div><label>Status</label><select onchange="flt.status=this.value;render()"><option value="all">Alle</option><option value="check" ${flt.status==='check'?'selected':''}>⚠ Te controleren</option><option value="checked" ${flt.status==='checked'?'selected':''}>✓ Gecontroleerd</option><option value="open" ${flt.status==='open'?'selected':''}>Open</option><option value="paid" ${flt.status==='paid'?'selected':''}>Betaald</option></select></div>
+ <div style="flex:1"><label>Zoeken</label><input placeholder="relatie, nummer, omschrijving…" value="${esc(flt.search)}" oninput="flt.search=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)"></div></div>`}
+function invTable(list,type){const t=list.reduce((a,p)=>{const v=vatTotals(p.lines);a.net+=v.net;a.vat+=v.vat;a.gross+=v.gross;return a},{net:0,vat:0,gross:0});
+ return `<div class="tablewrap"><table><tr><th></th><th>Datum</th><th>${type==='purchase'?'Leverancier':'Klant'}</th><th>Nr</th><th>${type==='purchase'?'Kostensoort':'Categorie'}</th><th class="num">Excl.</th><th class="num">BTW</th><th class="num">Incl.</th><th>Status</th></tr>
+ ${list.length?list.map(p=>{const v=vatTotals(p.lines);const rates=[...new Set(p.lines.map(l=>l.rate))].join('/');return `<tr style="cursor:pointer" onclick="openInvoice('${type}','${p.id}')"><td onclick="event.stopPropagation()">${p.fileId?`<span class="thumb" title="Bijlage bekijken" onclick="viewFile('${p.fileId}')">${p.fileType==='application/pdf'?'📄':'🖼'}</span>`:''}</td><td>${fdate(p.date)}<div class="sub">${p.date?'Q'+quarterOf(p.date)+' '+p.date.slice(2,4):''}</div></td><td><b>${esc(p.party)}</b> ${p.docType==='bon'?'<span class="tag gr">bon</span>':p.docType==='creditnota'?'<span class="tag a">creditnota</span>':''}<div class="sub">${esc(p.desc)}</div></td><td>${esc(p.nr)}</td><td>${esc(p.cat)}${schemeOf(p)!=='normal'?' <span class="tag b">'+({nl_reverse:'verlegd',eu:'EU',non_eu:'buiten EU'})[schemeOf(p)]+'</span>':''}</td><td class="num">${fmt(v.net)}</td><td class="num">${fmt(v.vat)}<div class="sub">${rates}%</div></td><td class="num"><b>${fmt(v.gross)}</b></td><td>${statusTag(p)} ${payMethodTag(p)} ${unknownAccountTag(p)}${type==='sale'&&p.reminders&&p.reminders.length?` <span class="tag a" title="laatste: ${fdate(p.reminders[p.reminders.length-1].slice(0,10))}">✉ ${p.reminders.length}x herinnerd</span>`:''}</td></tr>`}).join(''):'<tr><td colspan="9" class="empty">Geen facturen in deze periode</td></tr>'}
+ <tr><td colspan="5"><b>Totaal (${list.length})</b></td><td class="num"><b>${fmt(t.net)}</b></td><td class="num"><b>${fmt(t.vat)}</b></td><td class="num"><b>${fmt(t.gross)}</b></td><td></td></tr></table></div>`}
+function renderInkoop(){document.getElementById('pageActions').innerHTML=`<button class="btn" onclick="document.getElementById('hiddenUpload').click()">📷 Bon / factuur uploaden</button> <button class="btn sec" onclick="openInvoice('purchase')">+ Handmatig</button>`;
+ const list=filterList(myP());const chk=myP().filter(p=>p.needsCheck).length;
+ document.getElementById('page').innerHTML=`<div class="drop noprint" style="padding:18px;margin-bottom:14px" onclick="document.getElementById('hiddenUpload').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="event.preventDefault();this.classList.remove('over');handleFiles(event.dataTransfer.files)"><b>Sleep hier alles: bonnen, inkoop- én verkoopfacturen (foto/PDF)</b>AI bepaalt zelf inkoop/verkoop, bon/factuur en kwartaal · 20+ tegelijk mag · daarna goedkeuren met 'Opslaan & volgende'</div>
+ ${chk?`<div class="warn noprint">🔎 ${chk} factuur${chk>1?'en':''} nog te controleren. <button class="link" onclick="flt.status='check';render()">Toon alleen deze</button></div>`:''}
+ <div class="card">${quarterBar(myP())}${filterBar()}${invTable(list,'purchase')}</div>`}
+function renderVerkoop(){document.getElementById('pageActions').innerHTML=`<button class="btn" onclick="openInvoice('sale')">+ Verkoopfactuur</button> <button class="btn sec" onclick="uploadSale()">📄 PDF uploaden (AI leest)</button>`;
+ const list=filterList(myS());
+ document.getElementById('page').innerHTML=`<div class="card">${quarterBar(myS())}${filterBar()}${invTable(list,'sale')}</div><div class="sub noprint">Tip: verkoopfacturen uit DirechtOfferte kun je hier als PDF uploaden — AI leest klant, nummer en btw.</div>`}
+function uploadSale(){const inp=document.createElement('input');inp.type='file';inp.accept='image/*,application/pdf';inp.multiple=true;inp.onchange=()=>handleFiles(inp.files,'sale');inp.click()}
+</script>
+<script>
+/* ================== BANK IMPORT ================== */
+function parseCSVText(text){const delim=(text.match(/;/g)||[]).length>=(text.match(/,/g)||[]).length?';':(text.match(/\t/g)||[]).length>(text.match(/,/g)||[]).length?'\t':',';const rows=[];let row=[],cell='',q=false;for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}else{if(c==='"')q=true;else if(c===delim){row.push(cell);cell=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x.trim()!==''))rows.push(row);row=[];cell=''}else cell+=c}}row.push(cell);if(row.some(x=>x.trim()!==''))rows.push(row);return rows}
+function abnField(s,key){s=s||'';let m=s.match(new RegExp('/'+key+'/([^/]*)','i'));if(m)return m[1].trim();m=s.match(new RegExp(key+':\\s*(.*?)(?:\\s{2,}|$)','i'));return m?m[1].trim():''}
+function findCol(h,names){for(const n of names){const i=h.findIndex(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'').includes(n));if(i>=0)return i}return -1}
+function parseBankCSV(text){
+ const rows=parseCSVText(text);if(rows.length<1)return[];
+ const h=rows[0].map(x=>x.trim());
+ /* ABN AMRO TAB export zonder header: rek, munt, datum(yyyymmdd), saldo, saldo, rentedatum, bedrag, omschrijving */
+ if(rows[0].length>=8&&/^\d{8}$/.test(h[2])&&/^\d{9,10}$/.test(h[0].replace(/\D/g,'')))return rows.map(r=>({date:normDate(r[2]),amount:parseNum(r[6]),name:abnField(r[7],'Naam')||abnField(r[7],'NAME'),desc:abnField(r[7],'Omschrijving')||abnField(r[7],'REMI')||(r[7]||'').trim(),ref:abnField(r[7],'IBAN')})).filter(t=>t.date);
+ const iDate=findCol(h,['datum','date','boekdatum','transactiedatum']),iAmt=findCol(h,['bedrageur','bedrag','amount','transactiebedrag']),iAfBij=findCol(h,['afbij','debitcredit','creditdebit','dc']),iName=findCol(h,['naamomschrijving','naamtegenpartij','naam','name','tegenpartij','counterparty']),iDesc=findCol(h,['mededelingen','omschrijving','description','remittance','memo']),iRef=findCol(h,['tegenrekening','tegenrekeningiban','counterpartyiban','iban']);
+ if(iDate<0||iAmt<0)throw new Error('Kolommen niet herkend. Verwacht minimaal een Datum- en Bedrag-kolom (ING, Rabobank, ABN AMRO, Knab, Bunq CSV).');
+ return rows.slice(1).map(r=>{let amt=parseNum(r[iAmt]);if(iAfBij>=0){const ab=(r[iAfBij]||'').trim().toLowerCase();if(ab==='af'||ab==='debit'||ab==='d')amt=-Math.abs(amt);else if(ab==='bij'||ab==='credit'||ab==='c')amt=Math.abs(amt)}return{date:normDate(r[iDate]),amount:amt,name:iName>=0?(r[iName]||'').trim():'',desc:iDesc>=0?(r[iDesc]||'').trim():'',ref:iRef>=0?(r[iRef]||'').trim():''}}).filter(t=>t.date&&t.amount);
+}
+function parseMT940(text){
+ const out=[];const lines=text.split(/\r?\n/);let cur=null;let in86=false;
+ for(const raw of lines){const ln=raw.replace(/\r$/,'');
+  if(ln.startsWith(':61:')){if(cur)out.push(cur);in86=false;const m=ln.slice(4).match(/^(\d{6})(\d{4})?(R?[CD])([A-Z])?(\d+,\d{0,2})/);const er=ln.slice(4).match(/N[A-Z]{3}(.*?)(?:\/\/|$)/);cur={date:m?normDate(m[1]):'',amount:m?parseNum(m[5])*(/D$/.test(m[3])?-1:1):0,name:'',desc:'',ref:'',raw:'',eref:er&&er[1]!=='NONREF'?er[1]:''};}
+  else if(ln.startsWith(':86:')&&cur){in86=true;cur.raw=ln.slice(4)}
+  else if(cur&&in86&&!ln.startsWith(':')&&!/^-$/.test(ln))cur.raw+=ln; /* ING breekt regels af zonder spatie */
+  else if(ln.startsWith(':'))in86=false;
+ }
+ if(cur)out.push(cur);
+ out.forEach(t=>{const r=t.raw||'';
+  /* ING/SEPA gestructureerd: /CNTP/IBAN/BIC/NAAM/// ... /REMI/USTD//tekst/ */
+  let m=r.match(/\/CNTP\/([^\/]*)\/([^\/]*)\/(.*?)\/\//);if(m){t.ref=m[1];t.name=m[3].trim()}
+  if(!t.name){m=r.match(/\/NAME\/([^\/]+)/);if(m)t.name=m[1].trim()}
+  m=r.match(/\/REMI\/(?:USTD|STRD)?\/*([\s\S]*?)(?=\/(?:PURP|EREF|MARF|CSID|CNTP|TRCD|ORDP|BENM|NAME|RTRN|ULTB|ULTD)\/|\/?$)/);
+  if(m)t.desc=m[1].replace(/\/+$/,'').trim();else{m=r.match(/\/REMI\/([^\/]+)/);if(m)t.desc=m[1].trim()}
+  if(!t.desc){m=r.match(/OMSCHR\w*:\s*(.*?)(?:\s{2,}|$)/i);if(m)t.desc=m[1].trim()}
+  if(!t.name){/* pinbetaling: "BCK*Bouwmarkt van der Oss NLD 04-09-2026 12:59 TERMINALID..." */
+   m=t.desc.match(/^(?:BCK\*|CCV\*|GEA\s+)?(.*?)(?:\s+(?:NLD|BEL|DEU)\b|\s+\d{2}-\d{2}-\d{4}|\s+TERMINALID|,PAS|$)/);if(m&&m[1])t.name=m[1].trim().slice(0,60)}
+  if(!t.name){m=r.match(/\/NAAM\/([^\/]+)|Naam:\s*(.*?)(?:\s{2,}|$)/i);if(m)t.name=(m[1]||m[2]||'').trim()}
+  if(!t.desc&&t.eref)t.desc='Kenmerk '+t.eref;
+  if(!t.name)t.name=t.desc.slice(0,40);
+  if(!t.ref){const ib=r.match(/[A-Z]{2}\d{2}[A-Z]{4}\d{10}/);if(ib)t.ref=ib[0]}
+  delete t.raw;delete t.eref;});
+ return out.filter(t=>t.date&&t.amount);
+}
+async function handleBankFile(file){
+ if(!file)return;const text=await file.text();
+ let txs;try{txs=/^:20:|^:61:/m.test(text)?parseMT940(text):parseBankCSV(text)}catch(e){toast('❌ '+e.message,6000);return}
+ if(!txs.length){toast('Geen mutaties gevonden in bestand');return}
+ const key=t=>t.date+'|'+t.amount+'|'+(t.name||'').slice(0,30)+'|'+(t.desc||'').slice(0,60);
+ const existing={};myB().forEach(b=>{const k=key(b);existing[k]=(existing[k]||0)+1});
+ let n=0;txs.forEach(t=>{const k=key(t);if(existing[k]>0){existing[k]--;return}S.bank.push({id:uid(),company:S.active,...t,matchId:null,ignored:false});n++});
+ S.bank.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ const auto=autoMatch();save();
+ const miss=myB().filter(b=>!b.matchId&&!b.ignored);const mp=miss.filter(b=>b.amount<0).length,ms=miss.filter(b=>b.amount>0).length;
+ toast(`✅ ${n} nieuwe mutaties · ${auto} automatisch gekoppeld · <b>ontbreekt: ${mp} inkoopbon, ${ms} verkoopfactuur</b>`,9000);
+ if(cur!=='bank')location.hash='#bank';else render();
+}
+function normS(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+const PARTY_STOP=['b.v.','bv','v.o.f.','vof','the','van','der','den'];
+/* Zoekt de grootste deelverzameling van items (elk {i, gross}) waarvan de som ~ target is (±tol). Werkt tot 16 items. */
+function subsetSum(items,target,tol){
+ const n=items.length;if(n<2||n>16)return null;
+ let bestMask=0,bestCount=0;
+ for(let mask=1;mask<(1<<n);mask++){let cnt=0,sum=0;for(let k=0;k<n;k++)if(mask&(1<<k)){cnt++;sum+=items[k].gross}
+  if(cnt>=2&&cnt>bestCount&&Math.abs(sum-target)<tol){bestCount=cnt;bestMask=mask}}
+ if(!bestMask)return null;
+ const grp=[];for(let k=0;k<n;k++)if(bestMask&(1<<k))grp.push(items[k].i);
+ return grp;
+}
+function isNonBankPay(i){return['contant','pin','creditcard'].includes(i.payMethod)}
+function candidates(b){const list=b.amount<0?myP():myS();const a=Math.abs(b.amount);const hay=(b.name+' '+b.desc).toLowerCase();const hayN=normS(hay);
+ const bd0=new Date(b.date);
+ /* een betaling kan niet ver vóór de factuurdatum vallen (max. 14 dagen vooruitbetaling), en niet extreem lang erna (max. ~18 maanden) */
+ const plausibleDate=i=>{const id=new Date(i.date);if(isNaN(bd0)||isNaN(id))return true;const dd=(bd0-id)/864e5;return dd>=-14&&dd<=548};
+ /* contant/pin/creditcard betaalde bonnen komen nooit op de zakelijke bank terecht — niet als kandidaat voorstellen */
+ const open=list.filter(i=>!i.bankRef&&plausibleDate(i)&&!isNonBankPay(i));
+ const partyWords=i=>(i.party||'').toLowerCase().split(/\s+/).filter(w=>w.length>3&&!PARTY_STOP.includes(w));
+ const nameHit=i=>partyWords(i).some(w=>hay.includes(w));
+ const nrHit=i=>{const nr=normS(i.nr);return nr&&nr.length>=4&&hayN.includes(nr)};
+ /* alleen matchen als er écht bewijs is in de bank-omschrijving: het factuurnummer óf de klant-/leveranciersnaam
+    moet er letterlijk in staan. Puur "het bedrag komt toevallig overeen" is niet genoeg (geeft onzin-matches,
+    zeker bij creditnota's met een negatief bedrag) */
+ const hasSignal=i=>nrHit(i)||nameHit(i);
+ const score=i=>{let sc=0;const bd=new Date(b.date),id=new Date(i.date);const dd=Math.abs((bd-id)/864e5);if(dd<=45)sc+=2;else if(dd<=120)sc+=1;if(nameHit(i))sc+=3;if(nrHit(i))sc+=5;return sc};
+ const res=open.filter(i=>hasSignal(i)&&Math.abs(vatTotals(i.lines).gross-a)<0.03).map(i=>({i,sc:score(i)}));
+ /* meerdere facturen/bonnen tegelijk betaald: alle factuurnummers die letterlijk in de omschrijving staan bij elkaar optellen
+    (bv. "Factuur 2026-0026 2026-0030 2026-0029 2026-0031" — één overschrijving voor 4+ facturen) */
+ let grouped=null;
+ if(!res.length){
+  const mentioned=open.filter(nrHit);
+  if(mentioned.length>=2){
+   const fullSum=mentioned.reduce((s,i)=>s+vatTotals(i.lines).gross,0);
+   let grp=null;
+   if(Math.abs(fullSum-a)<0.03)grp=mentioned;
+   else grp=subsetSum(mentioned.map(i=>({i,gross:vatTotals(i.lines).gross})),a,0.03);
+   if(grp){grouped=grp;const sorted=[...grp].sort((x,y)=>score(y)-score(x));res.push({i:sorted[0],sc:score(sorted[0])+2,group:sorted.slice(1)})}
+  }
+ }
+ /* bonnen/facturen zonder (herkenbaar) factuurnummer in de omschrijving, maar wél de leveranciersnaam: meerdere
+    bonnen van diezelfde leverancier die samen precies het bankbedrag vormen (bv. een stapel kassabonnetjes in
+    één keer verzameld overgemaakt). Vereist altijd een naam-match — nooit alleen "datum ligt in de buurt" */
+ if(!res.length){
+  const pool=open.filter(nameHit);
+  if(pool.length>=2){
+   const trimmed=pool.length<=16?pool:[...pool].sort((x,y)=>score(y)-score(x)).slice(0,16);
+   const grp=subsetSum(trimmed.map(i=>({i,gross:vatTotals(i.lines).gross})),a,0.03);
+   if(grp){grouped=grp;const sorted=[...grp].sort((x,y)=>score(y)-score(x));res.push({i:sorted[0],sc:score(sorted[0])+2,group:sorted.slice(1)})}
+  }
+ }
+ /* factuurnummer in omschrijving maar ander bedrag (deelbetaling) — alleen tonen als hij niet al in een gevonden groep zit */
+ if(!grouped)open.forEach(i=>{if(nrHit(i)&&!res.find(x=>x.i===i))res.push({i,sc:score(i)-1,partial:true})});
+ return res.sort((x,y)=>y.sc-x.sc)}
+function autoMatch(){let n=0;myB().forEach(b=>{if(b.matchId||b.ignored)return;const c=candidates(b).filter(x=>!x.partial);if(c.length===1&&c[0].sc>=3||c.length>1&&c[0].sc>=5&&c[0].sc>c[1].sc){linkBank(b,[c[0].i,...(c[0].group||[])]);n++}});return n}
+function linkBank(b,invs){const arr=Array.isArray(invs)?invs:[invs];b.matchId=arr[0].id;b.matchIds=arr.map(x=>x.id);arr.forEach(inv=>{inv.status='betaald';inv.paidDate=b.date;inv.bankRef=b.id})}
+function matchBank(bid,iid,extraIds){const b=S.bank.find(x=>x.id===bid),i=findInv(iid);if(!b||!i)return;const arr=[i];(extraIds||[]).forEach(id=>{const j=findInv(id);if(j)arr.push(j)});linkBank(b,arr);save();render();toast('Gekoppeld: '+esc(i.party)+(arr.length>1?` + ${arr.length-1} andere`:''))}
+function unmatchBank(bid){const b=S.bank.find(x=>x.id===bid);const ids=b.matchIds&&b.matchIds.length?b.matchIds:[b.matchId].filter(Boolean);ids.forEach(id=>{const i=id&&findInv(id);if(i){i.status='open';i.paidDate='';i.bankRef=null}});b.matchId=null;b.matchIds=null;save();render()}
+function ignoreBank(bid,v){const b=S.bank.find(x=>x.id===bid);b.ignored=v;save();render()}
+function deleteBankRow(bid){const b=S.bank.find(x=>x.id===bid);if(!b)return;if(b.matchId&&!confirm('Deze mutatie is gekoppeld aan een factuur/bon. Toch verwijderen? (de factuur zelf blijft bestaan, maar wordt weer "open")'))return;if(!b.matchId&&!confirm('Deze bankmutatie verwijderen?'))return;
+ const ids=b.matchIds&&b.matchIds.length?b.matchIds:[b.matchId].filter(Boolean);ids.forEach(id=>{const i=id&&findInv(id);if(i){i.status='open';i.paidDate='';i.bankRef=null}});
+ S.bank=S.bank.filter(x=>x.id!==bid);save();render()}
+function deleteBankDuplicates(){const list=myB();const seen=new Map();let toRemove=[];
+ list.forEach(b=>{const k=(b.date||'')+'|'+r2(b.amount)+'|'+(b.name||'').trim().toLowerCase()+'|'+(b.desc||'').trim().toLowerCase();if(seen.has(k))toRemove.push(b.id);else seen.set(k,b.id)});
+ if(!toRemove.length){toast('Geen exacte dubbele mutaties gevonden (zelfde datum, bedrag, naam én omschrijving). De rijen die op elkaar lijken zijn dus blijkbaar toch verschillende, echte mutaties.',7000);return}
+ if(!confirm(`${toRemove.length} exacte dubbele mutatie(s) gevonden (zelfde datum + bedrag + naam + omschrijving). Verwijderen?`))return;
+ const rm=new Set(toRemove);[...S.purchases,...S.sales].forEach(i=>{if(rm.has(i.bankRef)){i.status='open';i.paidDate='';i.bankRef=null}});
+ S.bank=S.bank.filter(b=>!rm.has(b.id));save();render();toast(`${toRemove.length} dubbele mutatie(s) verwijderd`)}
+function reviewBankDuplicates(){const list=myB();const groups={};
+ list.forEach(b=>{const k=(b.date||'')+'|'+r2(b.amount);(groups[k]=groups[k]||[]).push(b)});
+ const dupGroups=Object.values(groups).filter(g=>g.length>1);
+ if(!dupGroups.length){toast('Geen mutaties gevonden met dezelfde datum + hetzelfde bedrag.',6000);return}
+ genModal(`<div class="modal-h"><h2>Mogelijke duplicaten — zelfde datum + bedrag</h2><button class="btn ghost sm" onclick="closeModal('genModal')">✕ Sluiten</button></div>
+ <div class="sub" style="margin-bottom:10px">Deze mutaties hebben dezelfde datum en hetzelfde bedrag, maar niet per se dezelfde naam/omschrijving — controleer zelf of het écht dubbel is voor je iets verwijdert. Vaak is de rij mét een duidelijke naam de "echte", en de rij met een kale code (zoals USTD) de dubbele import.</div>
+ ${dupGroups.map(g=>`<div class="card" style="margin-bottom:10px"><div class="sub" style="margin-bottom:6px">${fdate(g[0].date)} · ${fmt(g[0].amount)} · ${g.length} mutaties</div>
+  ${g.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)"><div><b>${esc(b.name||'(geen naam)')}</b><div class="sub">${esc((b.desc||'').slice(0,100))}${b.matchId?' · <span class="tag g">gekoppeld</span>':b.ignored?' · <span class="tag gr">genegeerd</span>':''}</div></div><button class="btn danger sm" onclick="deleteBankRow('${b.id}');closeModal('genModal');reviewBankDuplicates()">🗑 Verwijder deze</button></div>`).join('')}
+ </div>`).join('')}`)}
+function bankCreate(bid){const b=S.bank.find(x=>x.id===bid);const type=b.amount<0?'purchase':'sale';const inv=newInvoice(type);inv.party=b.name||b.desc.slice(0,40);inv.date=b.date;inv.desc=b.desc.slice(0,80);const g=Math.abs(b.amount);const net=r2(g/1.21);inv.lines=[{rate:21,net,vat:r2(g-net)}];inv.status='betaald';inv.paidDate=b.date;inv.bankRef=b.id;listOf(type).unshift(inv);b.matchId=inv.id;b.matchIds=[inv.id];save();openInvoice(type,inv.id)}
+function deleteBankAll(){if(!confirm('Alle bankmutaties van dit bedrijf verwijderen? (Facturen blijven staan; koppelingen worden losgemaakt)'))return;const ids=new Set(myB().map(b=>b.id));[...S.purchases,...S.sales].forEach(i=>{if(ids.has(i.bankRef))i.bankRef=null});S.bank=S.bank.filter(b=>b.company!==S.active);save();render()}
+let bankFlt='open';
+function renderBank(){document.getElementById('pageActions').innerHTML=`<button class="btn" onclick="document.getElementById('hiddenBank').click()">⬆ Bankbestand importeren</button> <button class="btn sec" onclick="const n=autoMatch();save();render();toast(n+' automatisch gekoppeld')">⚡ Auto-koppelen</button>`;
+ let list=myB();const open=list.filter(b=>!b.matchId&&!b.ignored).length;
+ if(bankFlt==='open')list=list.filter(b=>!b.matchId&&!b.ignored);else if(bankFlt==='matched')list=list.filter(b=>b.matchId);else if(bankFlt==='ignored')list=list.filter(b=>b.ignored);
+ const all=myB();const matched=all.filter(b=>b.matchId).length,ign=all.filter(b=>b.ignored).length;const missP=all.filter(b=>!b.matchId&&!b.ignored&&b.amount<0),missS=all.filter(b=>!b.matchId&&!b.ignored&&b.amount>0);
+ const unpaidP=myP().filter(i=>!i.bankRef&&!i.needsCheck&&!isNonBankPay(i)),unpaidS=myS().filter(i=>!i.bankRef&&!i.needsCheck&&!isNonBankPay(i));
+ document.getElementById('page').innerHTML=`${all.length?`<div class="grid g3" style="margin-bottom:14px">
+  <div class="kpi"><div class="l">Gekoppeld aan factuur/bon</div><div class="v pos">${matched}</div><div class="s">van ${all.length} mutaties${ign?` · ${ign} genegeerd`:''}</div></div>
+  <div class="kpi" style="cursor:pointer" onclick="bankFlt='open';render()"><div class="l">Ontbrekende inkoopbon</div><div class="v ${missP.length?'neg':''}">${missP.length}</div><div class="s">afschrijvingen zonder bon · ${fmt(missP.reduce((a,b)=>a+Math.abs(b.amount),0))}</div></div>
+  <div class="kpi" style="cursor:pointer" onclick="bankFlt='open';render()"><div class="l">Ontbrekende verkoopfactuur</div><div class="v ${missS.length?'neg':''}">${missS.length}</div><div class="s">bijschrijvingen zonder factuur · ${fmt(missS.reduce((a,b)=>a+b.amount,0))}</div></div>
+  <div class="kpi"><div class="l">Facturen zonder betaling</div><div class="v ${unpaidP.length+unpaidS.length?'neg':''}">${unpaidP.length+unpaidS.length}</div><div class="s">${unpaidP.length} inkoop · ${unpaidS.length} verkoop nog niet op bank gezien</div></div></div>
+ <div class="card noprint" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><b>Ontbrekende bonnen-lijst:</b><button class="btn sec sm" onclick="showMissing()">📋 Bekijken / afdrukken</button><button class="btn sec sm" onclick="exportMissing()">⬇ CSV voor boekhouder</button><span class="sub">Stuur deze lijst naar jezelf en zoek de bonnen erbij; upload ze bij Inkoop → ze koppelen automatisch.</span></div>`:''}
+ <div class="card"><div class="sub" style="margin-bottom:10px">Ondersteund: CSV-export van ING, Rabobank, ABN AMRO, Knab, Bunq en MT940 (.sta/.940). Mutaties worden automatisch gekoppeld aan facturen met hetzelfde bedrag.</div>
+ <div class="filters noprint"><div><label>Toon</label><select onchange="bankFlt=this.value;render()"><option value="open" ${bankFlt==='open'?'selected':''}>Te koppelen (${open})</option><option value="matched" ${bankFlt==='matched'?'selected':''}>Gekoppeld</option><option value="ignored" ${bankFlt==='ignored'?'selected':''}>Genegeerd (privé/intern)</option><option value="all" ${bankFlt==='all'?'selected':''}>Alles</option></select></div><div style="margin-left:auto;display:flex;gap:8px"><button class="btn sec sm" onclick="deleteBankDuplicates()">🧹 Verwijder exacte duplicaten</button><button class="btn sec sm" onclick="reviewBankDuplicates()">🔍 Bekijk mogelijke duplicaten</button><button class="btn danger sm" onclick="deleteBankAll()">Alle mutaties wissen</button></div></div>
+ <div class="tablewrap"><table><tr><th>Datum</th><th>Naam / omschrijving</th><th class="num">Bedrag</th><th style="width:40%">Koppeling</th></tr>
+ ${list.length?list.map(b=>{const mIds=b.matchIds&&b.matchIds.length?b.matchIds:(b.matchId?[b.matchId]:[]);const ms=mIds.map(findInv).filter(Boolean);const m=ms[0];const c=!m&&!b.ignored?candidates(b).slice(0,3):[];return `<tr><td>${fdate(b.date)}</td><td><b>${esc(b.name)}</b><div class="sub">${esc(b.desc.slice(0,120))}</div></td><td class="num ${b.amount<0?'neg':'pos'}"><b>${fmt(b.amount)}</b></td><td>
+  ${m?`<span class="tag g">✓ ${m.type==='purchase'?'Inkoop':'Verkoop'}${ms.length>1?` (${ms.length}x)`:''}</span> ${ms.map(x=>`<button class="link" onclick="openInvoice('${x.type}','${x.id}')">${esc(x.party)} ${esc(x.nr)}</button>`).join(' + ')} <button class="btn ghost sm" onclick="unmatchBank('${b.id}')">ontkoppel</button> <button class="btn danger sm" onclick="deleteBankRow('${b.id}')">🗑 Verwijder</button>`
+  :b.ignored?`<span class="tag gr">genegeerd</span> <button class="btn ghost sm" onclick="ignoreBank('${b.id}',false)">herstel</button> <button class="btn danger sm" onclick="deleteBankRow('${b.id}')">🗑 Verwijder</button>`
+  :`${c.length?c.map(x=>`<div class="matchbox">${x.group&&x.group.length?`Samen betaald (${1+x.group.length} facturen): `:x.partial?'<span style="color:#d97706">Deelbetaling? </span>':'Voorstel: '}<b>${esc(x.i.party)}</b> ${esc(x.i.nr)} · ${fdate(x.i.date)} · ${fmt(vatTotals(x.i.lines).gross)}${x.group&&x.group.length?x.group.map(g=>` + <b>${esc(g.nr)}</b> ${fmt(vatTotals(g.lines).gross)}`).join(''):''}${x.i.status==='betaald'?' <span class="tag g">al betaald</span>':''} <button class="btn sm" style="float:right" onclick="matchBank('${b.id}','${x.i.id}'${x.group&&x.group.length?`,[${x.group.map(g=>`'${g.id}'`).join(',')}]`:''})">Koppel</button></div>`).join(''):'<span class="sub">Geen factuur met dit bedrag gevonden</span>'}
+   <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sec sm" onclick="bankCreate('${b.id}')">+ Maak ${b.amount<0?'inkoop':'verkoop'}boeking</button><button class="btn ghost sm" onclick="ignoreBank('${b.id}',true)">Negeer (privé)</button><button class="btn danger sm" onclick="deleteBankRow('${b.id}')">🗑 Verwijder</button></div>`}
+ </td></tr>`}).join(''):'<tr><td colspan="4" class="empty">Geen mutaties. Importeer een CSV of MT940 van je bank.</td></tr>'}</table></div></div>`}
+
+function missingRows(){const all=myB().filter(b=>!b.matchId&&!b.ignored).sort((a,b)=>(a.date||'').localeCompare(b.date||''));const rows=all.map(b=>({soort:b.amount<0?'Inkoopbon ontbreekt':'Verkoopfactuur ontbreekt',date:b.date,name:b.name,desc:b.desc,amount:b.amount}));
+ myP().filter(i=>!i.bankRef&&!i.needsCheck&&!isNonBankPay(i)).forEach(i=>rows.push({soort:'Inkoop niet op bank gezien',date:i.date,name:i.party,desc:'Factuur '+(i.nr||''),amount:-vatTotals(i.lines).gross}));
+ myS().filter(i=>!i.bankRef&&!i.needsCheck&&!isNonBankPay(i)).forEach(i=>rows.push({soort:'Verkoop niet op bank gezien',date:i.date,name:i.party,desc:'Factuur '+(i.nr||''),amount:vatTotals(i.lines).gross}));return rows}
+function showMissing(){const rows=missingRows();const grp={};rows.forEach(r=>{(grp[r.soort]=grp[r.soort]||[]).push(r)});
+ genModal(`<div class="modal-h"><h2>Ontbrekende bonnen & facturen — ${esc(comp().short)}</h2><div><button class="btn sec sm" onclick="window.print()">🖨 Afdrukken</button> <button class="btn ghost sm" onclick="closeModal('genModal')">✕</button></div></div>
+ ${rows.length?Object.entries(grp).map(([k,v])=>`<h3 style="margin-top:14px">${esc(k)} (${v.length})</h3><div class="tablewrap"><table><tr><th>Datum</th><th>Naam</th><th>Omschrijving</th><th class="num">Bedrag</th></tr>${v.map(r=>`<tr><td>${fdate(r.date)}</td><td><b>${esc(r.name)}</b></td><td class="sub">${esc((r.desc||'').slice(0,80))}</td><td class="num ${r.amount<0?'neg':'pos'}">${fmt(r.amount)}</td></tr>`).join('')}</table></div>`).join(''):'<div class="ok">✅ Alles gekoppeld — niets ontbreekt.</div>'}`);
+ document.getElementById('genModalBox').classList.remove('narrow');}
+function exportMissing(){const rows=missingRows();if(!rows.length){toast('Niets ontbreekt 🎉');return}download(`ontbrekende-bonnen-${comp().short.replace(/\s+/g,'_')}-${today()}.csv`,csv([['Soort','Datum','Naam','Omschrijving','Bedrag'],...rows.map(r=>[r.soort,fdate(r.date),r.name,r.desc,r2(r.amount).toFixed(2).replace('.',',')])]),'text/csv')}
+
+/* ================== BTW-AANGIFTE ================== */
+let btwSel={year:String(new Date().getFullYear()),q:String(quarterOf(today()))};
+function aangKey(year,q){return `aangifte:${S.active}:${year}:${q}`}
+function getAang(year,q){return (S.settings.aangiftes||{})[aangKey(year,q)]||null}
+function isLocked(date){if(!date)return false;const a=S.settings.aangiftes||{};return Object.keys(a).some(k=>{const [_,c,y,qq]=k.split(':');return c===S.active&&a[k].locked&&inPeriod(date,y,qq)})}
+function privUse(year,q){return Number(((S.settings.priveGebruik||{})[`${S.active}:${year}:${q}`])||0)}
+function btwCalc(year,q){
+ const P=myP().filter(p=>inPeriod(p.date,year,q)),Sa=myS().filter(p=>inPeriod(p.date,year,q));
+ const z=()=>({net:0,vat:0});const r={r1a:z(),r1b:z(),r1c:z(),r1d:z(),r1e:z(),r2a:z(),r3a:z(),r3b:z(),r3c:z(),r4a:z(),r4b:z(),r5b:0,inNet:0,inVat:0,inGross:0,outGross:0,nonDed:0,cntP:P.length,cntS:Sa.length};
+ Sa.forEach(s=>{const sch=schemeOf(s);const t=vatTotals(s.lines);r.outGross+=t.gross;
+  if(sch==='nl_reverse')r.r1e.net+=t.net;else if(sch==='eu')r.r3b.net+=t.net;else if(sch==='non_eu')r.r3a.net+=t.net;
+  else s.lines.forEach(l=>{if(l.rate==21){r.r1a.net+=l.net;r.r1a.vat+=l.vat}else if(l.rate==9){r.r1b.net+=l.net;r.r1b.vat+=l.vat}else r.r1e.net+=l.net})});
+ P.forEach(p=>{const sch=schemeOf(p);const t=vatTotals(p.lines);r.inNet+=t.net;r.inVat+=t.vat;r.inGross+=t.gross;const ded=p.vatDeductible!==false;
+  if(sch==='nl_reverse'){const v=r2(t.net*0.21);r.r2a.net+=t.net;r.r2a.vat+=v;if(ded)r.r5b+=v}
+  else if(sch==='eu'){const v=r2(t.net*0.21);r.r4b.net+=t.net;r.r4b.vat+=v;if(ded)r.r5b+=v}
+  else if(sch==='non_eu'){const v=r2(t.net*0.21);r.r4a.net+=t.net;r.r4a.vat+=v;if(ded)r.r5b+=v}
+  else if(ded)r.r5b+=t.vat;else r.nonDed+=t.vat});
+ const pu=privUse(year,q);r.r1d.net=pu;r.r1d.vat=r2(pu*0.21);
+ r.r5a=r2(r.r1a.vat+r.r1b.vat+r.r1c.vat+r.r1d.vat+r.r2a.vat+r.r4a.vat+r.r4b.vat);r.r5b=r2(r.r5b);r.r5c=r2(r.r5a-r.r5b);
+ r.check=P.filter(p=>p.needsCheck).length+Sa.filter(p=>p.needsCheck).length;
+ r.dups=[...P,...Sa].filter(i=>findDup(i)).length;
+ r.reqs=[...P,...Sa].reduce((a,i)=>a+invoiceChecks(i).length,0);
+ r.unlinkedS=Sa.filter(i=>!i.bankRef&&!i.needsCheck&&!isNonBankPay(i)).length;
+ Object.keys(r).forEach(k=>{if(r[k]&&typeof r[k]==='object'){r[k].net=r2(r[k].net);r[k].vat=r2(r[k].vat)}});return r;
+}
+function eurDown(v){return Math.floor(Math.abs(v))*Math.sign(v)}function eurUp(v){return Math.ceil(Math.abs(v))*Math.sign(v)}
+/* Zeer globale schatting inkomstenbelasting box 1, 2025-tarieven, vóór heffingskortingen. Puur indicatief. */
+function box1Tax(inc){inc=Math.max(0,inc);let t=0;const b1=38441,b2=76817;if(inc<=b1)t=inc*.3582;else if(inc<=b2)t=b1*.3582+(inc-b1)*.3748;else t=b1*.3582+(b2-b1)*.3748+(inc-b2)*.495;return t}
+function estimateIB(profitShare,meetsHours,otherIncome){profitShare=Math.max(0,profitShare);otherIncome=Math.max(0,otherIncome||0);
+ const zelfstandigenaftrek=meetsHours?Math.min(2470,profitShare):0;let taxableProfit=Math.max(0,profitShare-zelfstandigenaftrek);
+ const mkbVrijstelling=taxableProfit*0.127;taxableProfit=taxableProfit-mkbVrijstelling;
+ const taxOnAll=box1Tax(taxableProfit+otherIncome);const taxOnOther=box1Tax(otherIncome);const taxOnBusiness=Math.max(0,taxOnAll-taxOnOther);
+ return{zelfstandigenaftrek,mkbVrijstelling,taxableProfit,taxOnBusiness}}
+function savePriv(year,q,v){S.settings.priveGebruik=S.settings.priveGebruik||{};S.settings.priveGebruik[`${S.active}:${year}:${q}`]=parseNum(v);save();render()}
+function closeAangifte(year,q){const r=btwCalc(year,q);const per=String(q).startsWith('m')?'maand':q==='all'?'jaar':'kwartaal';
+ if(r.check&&!confirm(`Er staan nog ${r.check} facturen op "Controleren". Toch afsluiten?`))return;
+ if(!confirm(`Aangifte ${per} vastleggen?\n\nVerschuldigd (5a): ${fmt(r.r5a)}\nVoorbelasting (5b): ${fmt(r.r5b)}\nTe betalen/terug (5c): ${fmt(r.r5c)}\n\nHet tijdvak wordt vergrendeld; wijzigingen daarna vragen om een suppletie.`))return;
+ S.settings.aangiftes=S.settings.aangiftes||{};S.settings.aangiftes[aangKey(year,q)]={locked:true,at:new Date().toISOString(),by:S.user?.email||'',r5a:r.r5a,r5b:r.r5b,r5c:r.r5c,r1a:r.r1a,r1b:r.r1b,r1e:r.r1e,r2a:r.r2a,r3a:r.r3a,r3b:r.r3b,r4a:r.r4a,r4b:r.r4b,r1d:r.r1d};save();render();toast('✅ Aangifte vastgelegd en tijdvak vergrendeld')}
+function reopenAangifte(year,q){if(!confirm('Tijdvak heropenen? Doe dit alleen als je een correctie/suppletie gaat indienen.'))return;const a=S.settings.aangiftes[aangKey(year,q)];a.locked=false;a.reopened=new Date().toISOString();save();render()}
+function renderBtw(){document.getElementById('pageActions').innerHTML=`<button class="btn sec" onclick="window.print()">🖨 Afdrukken / PDF</button> <button class="btn sec" onclick="exportBtwCsv()">⬇ CSV</button>`;
+ const {year,q}=btwSel;const r=btwCalc(year,q);const c=comp();const aang=getAang(year,q);
+ const years=[...new Set([...S.purchases,...S.sales].map(p=>(p.date||'').slice(0,4)).filter(Boolean).concat(String(new Date().getFullYear())))].sort().reverse();
+ const per=q==='all'?'Jaar '+year:String(q).startsWith('m')?new Date(2000,parseInt(q.slice(1))-1,1).toLocaleString('nl-NL',{month:'long'})+' '+year:`${q}e kwartaal ${year}`;
+ const row=(rub,lbl,net,vat,opt)=>`<tr ${opt&&opt.dim&&!net&&!vat?'style="color:#9ca3af"':''}><td class="rub">${rub}</td><td>${lbl}</td><td class="num">${net==null?'':fmt(net)}</td><td class="num">${vat==null?'':fmt(vat)}</td><td class="num" style="background:#f8fafc"><b>${net==null?'':'€ '+eurDown(net).toLocaleString('nl-NL')}</b></td><td class="num" style="background:#f8fafc"><b>${vat==null?'':'€ '+(opt&&opt.up?eurUp(vat):eurDown(vat)).toLocaleString('nl-NL')}</b></td></tr>`;
+ const head=t=>`<tr><td colspan="6" style="background:#eef2ff;font-weight:700">${t}</td></tr>`;
+ const checks=[[r.check===0,`Alle facturen gecontroleerd ${r.check?`(${r.check} nog te controleren)`:''}`],[r.dups===0,`Geen dubbele facturen ${r.dups?`(${r.dups} mogelijk dubbel)`:''}`],[r.reqs===0,`Factuureisen compleet ${r.reqs?`(${r.reqs} aandachtspunten, zie facturen)`:''}`],[r.unlinkedS===0,`Verkoopfacturen gekoppeld aan bank ${r.unlinkedS?`(${r.unlinkedS} nog niet gezien op bank)`:''}`],[!c.btwnr?false:true,c.btwnr?`Btw-nummer ingevuld (${esc(c.btwnr)})`:'Btw-nummer ontbreekt bij Instellingen']];
+ document.getElementById('page').innerHTML=`<div class="filters noprint"><div><label>Jaar</label><select onchange="btwSel.year=this.value;render()">${years.map(y=>`<option ${year===y?'selected':''}>${y}</option>`).join('')}</select></div><div><label>Tijdvak</label><select onchange="btwSel.q=this.value;render()">${[1,2,3,4].map(x=>`<option value="${x}" ${q==String(x)?'selected':''}>Q${x} (${['jan-mrt','apr-jun','jul-sep','okt-dec'][x-1]})</option>`).join('')}${Array.from({length:12},(_,m)=>`<option value="m${m+1}" ${q==='m'+(m+1)?'selected':''}>${new Date(2000,m,1).toLocaleString('nl-NL',{month:'long'})}</option>`).join('')}<option value="all" ${q==='all'?'selected':''}>Heel jaar</option></select></div>
+ <div><label>1d Privégebruik (grondslag)</label><input type="number" step="0.01" style="width:130px" value="${privUse(year,q)||''}" placeholder="0,00" onchange="savePriv('${year}','${q}',this.value)" ${aang?.locked||!isOwner()?'disabled':''}></div></div>
+ ${aang?.locked?`<div class="ok">🔒 <b>Aangifte vastgelegd</b> op ${fdate(aang.at.slice(0,10))} door ${esc(aang.by)} · 5a ${fmt(aang.r5a)} · 5b ${fmt(aang.r5b)} · 5c ${fmt(aang.r5c)}. Tijdvak is vergrendeld. ${isOwner()?`<button class="btn ghost sm noprint" onclick="reopenAangifte('${year}','${q}')">Heropenen (suppletie)</button>`:''}</div>`:''}
+ <div class="card noprint"><h3>Controlelijst vóór aangifte</h3><table>${checks.map(([ok,t])=>`<tr><td style="width:30px">${ok?'✅':'⚠️'}</td><td>${t}</td></tr>`).join('')}</table>
+ ${!aang?.locked&&isOwner()?`<div style="margin-top:10px"><button class="btn" onclick="closeAangifte('${year}','${q}')">🔒 Aangifte vastleggen & tijdvak afsluiten</button> <span class="sub">Doe dit nadat je de aangifte bij de Belastingdienst hebt ingediend.</span></div>`:''}</div>
+ <div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><h2 style="margin-bottom:2px">Aangifte omzetbelasting — ${per}</h2><div class="sub">${esc(c.name)}${c.btwnr?' · Btw-id '+esc(c.btwnr):''}${c.kvk?' · KVK '+esc(c.kvk):''}</div></div><div class="sub">${r.cntS} verkoop · ${r.cntP} inkoop · aangemaakt ${fdate(today())}</div></div>
+ <div class="tablewrap" style="margin-top:14px"><table class="btwtable"><tr><th></th><th>Rubriek (zoals op het aangifteformulier)</th><th class="num">Grondslag</th><th class="num">BTW</th><th class="num">In te vullen<br><span class="sub">hele euro's</span></th><th class="num">In te vullen<br><span class="sub">btw</span></th></tr>
+ ${head('1. Prestaties binnenland')}
+ ${row('1a','Leveringen/diensten belast met hoog tarief (21%)',r.r1a.net,r.r1a.vat)}
+ ${row('1b','Leveringen/diensten belast met laag tarief (9%)',r.r1b.net,r.r1b.vat)}
+ ${row('1c','Leveringen/diensten belast met overige tarieven, behalve 0%',r.r1c.net,r.r1c.vat,{dim:1})}
+ ${row('1d','Privégebruik',r.r1d.net,r.r1d.vat,{dim:1})}
+ ${row('1e','Leveringen/diensten belast met 0% of niet bij u belast (o.a. btw verlegd naar afnemer)',r.r1e.net,null)}
+ ${head('2. Verleggingsregelingen binnenland')}
+ ${row('2a','Leveringen/diensten waarbij de omzetbelasting naar u is verlegd',r.r2a.net,r.r2a.vat)}
+ ${head('3. Prestaties naar of in het buitenland')}
+ ${row('3a','Leveringen naar landen buiten de EU (uitvoer)',r.r3a.net,null,{dim:1})}
+ ${row('3b','Leveringen naar of diensten in landen binnen de EU',r.r3b.net,null,{dim:1})}
+ ${row('3c','Installatie/afstandsverkopen binnen de EU',r.r3c.net,null,{dim:1})}
+ ${head('4. Prestaties vanuit het buitenland aan u verricht')}
+ ${row('4a','Leveringen/diensten uit landen buiten de EU',r.r4a.net,r.r4a.vat,{dim:1})}
+ ${row('4b','Leveringen/diensten uit landen binnen de EU',r.r4b.net,r.r4b.vat,{dim:1})}
+ ${head('5. Voorbelasting, kleineondernemersregeling en totaal')}
+ ${row('5a','Verschuldigde omzetbelasting (rubrieken 1 t/m 4)',null,r.r5a)}
+ ${row('5b','Voorbelasting',null,r.r5b,{up:1})}
+ <tr style="font-size:16px"><td class="rub">5c</td><td><b>Subtotaal (5a min 5b) — ${r.r5c>=0?'te betalen':'terug te vragen'}</b></td><td></td><td class="num"><b class="${r.r5c>=0?'neg':'pos'}">${fmt(Math.abs(r.r5c))}</b></td><td></td><td class="num" style="background:#f8fafc"><b class="${r.r5c>=0?'neg':'pos'}">€ ${Math.abs(eurDown(r.r5a)-eurUp(r.r5b)).toLocaleString('nl-NL')}</b></td></tr>
+ </table></div>
+ ${r.r3b.net?`<div class="warn">📌 Rubriek 3b is gevuld: je moet ook een <b>Opgaaf ICP</b> indienen voor dit tijdvak.</div>`:''}
+ ${r.nonDed?`<div class="sub" style="margin-top:8px">Niet-aftrekbare btw (uitgesloten van 5b): ${fmt(r.nonDed)}</div>`:''}
+ <div class="sub" style="margin-top:10px">Afronding volgens Belastingdienst: hele euro's, in uw voordeel (omzet en verschuldigde btw naar beneden, voorbelasting naar boven). Kwartaalaangifte uiterlijk de laatste dag van de maand na het kwartaal indienen én betalen. Bewaar facturen en dit overzicht 7 jaar. Dit overzicht is een hulpmiddel; controleer bij twijfel met je boekhouder.</div></div>
+ <div class="grid g2"><div class="card"><h3>Kosten per soort (${per})</h3><table>${Object.entries(myP().filter(p=>inPeriod(p.date,year,q)).reduce((a,p)=>{const t=vatTotals(p.lines);a[p.cat]=(a[p.cat]||0)+t.net;return a},{})).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${fmt(v)}</td></tr>`).join('')||'<tr><td class="empty">Geen kosten</td></tr>'}</table></div>
+ <div class="card"><h3>Samenvatting</h3><table><tr><td>Omzet excl. btw</td><td class="num">${fmt(r.r1a.net+r.r1b.net+r.r1e.net+r.r3a.net+r.r3b.net)}</td></tr><tr><td>Kosten excl. btw</td><td class="num">${fmt(r.inNet)}</td></tr><tr><td><b>Resultaat (indicatief)</b></td><td class="num"><b>${fmt(r.r1a.net+r.r1b.net+r.r1e.net+r.r3a.net+r.r3b.net-r.inNet)}</b></td></tr><tr><td>Omzet incl. btw</td><td class="num">${fmt(r.outGross)}</td></tr><tr><td>Kosten incl. btw</td><td class="num">${fmt(r.inGross)}</td></tr></table></div></div>
+ ${partnersOf(c).length?(()=>{const winst=r.r1a.net+r.r1b.net+r.r1e.net+r.r3a.net+r.r3b.net-r.inNet;const parts=partnersOf(c);return `<div class="card"><h3>Winstverdeling & indicatie inkomstenbelasting — ${per}</h3>
+ <div class="sub" style="margin-bottom:10px">Resultaat van dit tijdvak (${fmt(winst)}) verdeeld volgens de percentages bij Instellingen → Vennoten. De inkomstenbelasting is een <b>zeer globale schatting</b> (2025-tarieven box 1, mét zelfstandigenaftrek en mkb-winstvrijstelling, maar <u>zonder</u> heffingskortingen zoals de algemene heffingskorting — in werkelijkheid betaal je meestal iets minder). Vraag je boekhouder om de exacte aangifte.</div>
+ <table><tr><th>Vennoot</th><th class="num">Aandeel</th><th class="num">Winstdeel</th><th class="num">Zelfstandigenaftrek</th><th class="num">Mkb-vrijstelling</th><th class="num">Belastbaar</th><th class="num">Indicatie IB</th></tr>
+ ${parts.map(p=>{const share=winst*(p.pct/100);const e=estimateIB(share,p.hours,p.other);return `<tr><td>${esc(p.name||'(naam ontbreekt)')}</td><td class="num">${p.pct}%</td><td class="num">${fmt(share)}</td><td class="num">${fmt(e.zelfstandigenaftrek)}</td><td class="num">${fmt(e.mkbVrijstelling)}</td><td class="num">${fmt(e.taxableProfit)}</td><td class="num"><b>${fmt(e.taxOnBusiness)}</b></td></tr>`}).join('')}
+ </table></div>`})():''}`}
+function exportBtwCsv(){const {year,q}=btwSel;const r=btwCalc(year,q);const rows=[['Rubriek','Omschrijving','Grondslag','BTW','In te vullen grondslag','In te vullen btw'],['1a','Hoog tarief 21%',r.r1a.net,r.r1a.vat,eurDown(r.r1a.net),eurDown(r.r1a.vat)],['1b','Laag tarief 9%',r.r1b.net,r.r1b.vat,eurDown(r.r1b.net),eurDown(r.r1b.vat)],['1d','Privégebruik',r.r1d.net,r.r1d.vat,eurDown(r.r1d.net),eurDown(r.r1d.vat)],['1e','0% / verlegd naar afnemer',r.r1e.net,'',eurDown(r.r1e.net),''],['2a','BTW naar u verlegd (binnenland)',r.r2a.net,r.r2a.vat,eurDown(r.r2a.net),eurDown(r.r2a.vat)],['3a','Uitvoer buiten EU',r.r3a.net,'',eurDown(r.r3a.net),''],['3b','Leveringen/diensten binnen EU',r.r3b.net,'',eurDown(r.r3b.net),''],['4a','Inkoop buiten EU',r.r4a.net,r.r4a.vat,eurDown(r.r4a.net),eurDown(r.r4a.vat)],['4b','Inkoop binnen EU',r.r4b.net,r.r4b.vat,eurDown(r.r4b.net),eurDown(r.r4b.vat)],['5a','Verschuldigd','',r.r5a,'',eurDown(r.r5a)],['5b','Voorbelasting','',r.r5b,'',eurUp(r.r5b)],['5c','Te betalen/terug','',r.r5c,'',eurDown(r.r5a)-eurUp(r.r5b)]];download(`btw-aangifte-${comp().short.replace(/\s+/g,'_')}-${year}-${q}.csv`,csv(rows.map(x=>x.map(v=>typeof v==='number'?v.toFixed(2).replace('.',','):v))),'text/csv')}
+
+/* ================== EXPORT ================== */
+function invRows(list,type){return list.map(p=>{const t=vatTotals(p.lines);const by=r=>p.lines.filter(l=>l.rate==r).reduce((a,l)=>({net:a.net+l.net,vat:a.vat+l.vat}),{net:0,vat:0});const a=by(21),b=by(9),c=by(0);return[comp().short,type==='purchase'?'Inkoop':'Verkoop',fdate(p.date),p.nr,p.party,p.partyBtw,p.cat,p.desc,n(a.net),n(a.vat),n(b.net),n(b.vat),n(c.net),n(t.net),n(t.vat),n(t.gross),({normal:'nee',nl_reverse:'verlegd binnenland',eu:'EU',non_eu:'buiten EU'})[schemeOf(p)],p.vatDeductible===false?'nee':'ja',p.status,fdate(p.paidDate),fdate(p.due),p.fileName||'']});function n(v){return r2(v).toFixed(2).replace('.',',')}}
+const EXP_HEAD=['Bedrijf','Type','Datum','Factuurnr','Relatie','BTW-nr relatie','Categorie','Omschrijving','Grondslag 21%','BTW 21%','Grondslag 9%','BTW 9%','Grondslag 0%','Totaal excl','Totaal BTW','Totaal incl','BTW-regeling','BTW aftrekbaar','Status','Betaald op','Vervaldatum','Bijlage'];
+function expPeriodList(list){return list.filter(p=>flt.year==='all'||inPeriod(p.date,flt.year,flt.q))}
+function exportCsv(kind){const nm=comp().short.replace(/\s+/g,'_')+'-'+flt.year+(flt.q!=='all'?'-'+flt.q:'');
+ if(kind==='inkoop')download(`inkoop-${nm}.csv`,csv([EXP_HEAD,...invRows(expPeriodList(myP()),'purchase')]),'text/csv');
+ else if(kind==='verkoop')download(`verkoop-${nm}.csv`,csv([EXP_HEAD,...invRows(expPeriodList(myS()),'sale')]),'text/csv');
+ else if(kind==='alles')download(`grootboek-${nm}.csv`,csv([EXP_HEAD,...invRows(expPeriodList(myS()),'sale'),...invRows(expPeriodList(myP()),'purchase')]),'text/csv');
+ else if(kind==='bank')download(`bank-${nm}.csv`,csv([['Datum','Naam','Omschrijving','Bedrag','Gekoppeld aan','Genegeerd'],...myB().filter(b=>flt.year==='all'||inPeriod(b.date,flt.year,flt.q)).map(b=>{const mIds=b.matchIds&&b.matchIds.length?b.matchIds:(b.matchId?[b.matchId]:[]);const ms=mIds.map(findInv).filter(Boolean);return[fdate(b.date),b.name,b.desc,r2(b.amount).toFixed(2).replace('.',','),ms.map(m=>m.party+' '+m.nr).join(' + '),b.ignored?'ja':'']})]),'text/csv');
+}
+async function exportAttachments(){const list=expPeriodList(myP()).concat(expPeriodList(myS())).filter(p=>p.fileId);if(!list.length){toast('Geen bijlagen in deze periode');return}toast(`${list.length} bijlagen worden gedownload…`);for(const p of list){const f=await getFile(p.fileId);if(!f)continue;const ext=f.type==='application/pdf'?'pdf':'jpg';const a=document.createElement('a');a.href=URL.createObjectURL(f.blob);a.download=`${p.date}_${(p.type==='purchase'?'INK':'VRK')}_${p.party.replace(/[^\w]+/g,'_')}_${(p.nr||'').replace(/[^\w]+/g,'_')}.${ext}`;a.click();await new Promise(r=>setTimeout(r,300))}}
+async function backup(){const files=await allFiles();const out={version:1,exported:new Date().toISOString(),state:S,files:{}};for(const [k,v] of Object.entries(files)){out.files[k]={type:v.type,name:v.name,b64:await blobToB64(v.blob)}}download(`boekhouding-backup-${today()}.json`,JSON.stringify(out),'application/json');toast('✅ Back-up gedownload (inclusief bijlagen)')}
+async function restoreBackup(file){if(!file)return;if(!isOwner()){toast('Alleen-lezen account');return}if(!confirm('Back-up terugzetten? Bestaande facturen met hetzelfde ID worden overschreven, de rest blijft staan.'))return;try{const d=JSON.parse(await file.text());if(!d.state)throw new Error('Ongeldig bestand');const st=d.state;const known=new Set(S.companies.map(c=>c.id));(st.companies||[]).forEach(c=>{if(!known.has(c.id))S.companies.push({id:c.id,name:c.name,short:c.short||c.name,kvk:c.kvk||'',btwnr:c.btwnr||'',iban:c.iban||'',sort:S.companies.length+1})});const merge=(dst,src)=>{const m=new Map(dst.map(x=>[x.id,x]));(src||[]).forEach(x=>m.set(x.id,x));return[...m.values()]};S.purchases=merge(S.purchases,st.purchases);S.sales=merge(S.sales,st.sales);S.bank=merge(S.bank,st.bank);for(const [k,v] of Object.entries(d.files||{})){const bin=atob(v.b64);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);await putFile(k,{blob:new Blob([arr],{type:v.type}),type:v.type,name:v.name})}await syncNow();fillCompanies();render();toast('✅ Back-up teruggezet')}catch(e){toast('❌ '+e.message)}}
+function renderExport(){document.getElementById('page').innerHTML=`<div class="card"><h2>Export voor de boekhouder</h2><div class="sub" style="margin-bottom:10px">Kies de periode; de CSV-bestanden openen direct in Excel (Nederlands formaat, puntkomma-gescheiden, komma als decimaal).</div>${filterBar().replace('<div><label>Status</label>','<div style="display:none"><label>Status</label>').replace('<div style="flex:1"><label>Zoeken</label>','<div style="display:none">')}
+ <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="exportCsv('alles')">⬇ Grootboek (inkoop + verkoop)</button><button class="btn sec" onclick="exportCsv('inkoop')">⬇ Inkoop CSV</button><button class="btn sec" onclick="exportCsv('verkoop')">⬇ Verkoop CSV</button><button class="btn sec" onclick="exportCsv('bank')">⬇ Bank CSV</button><button class="btn sec" onclick="exportBtwCsv()">⬇ BTW-aangifte CSV</button><button class="btn sec" onclick="exportAttachments()">⬇ Alle bijlagen (bonnen/PDF's)</button></div>
+ <div class="sub" style="margin-top:10px">Kolommen zijn geschikt om te importeren in Exact, e-Boekhouden, Moneybird, SnelStart of om direct te delen met je accountant.</div></div>
+ <div class="card"><h2>Back-up & herstel</h2><p class="sub">Alle data staat in Supabase (cloud). Een extra back-up (inclusief bijlagen) is verstandig, bv. maandelijks.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="backup()">💾 Volledige back-up downloaden</button><button class="btn sec" onclick="document.getElementById('hiddenRestore').click()">⬆ Back-up terugzetten</button></div></div>`}
+
+/* ================== INSTELLINGEN ================== */
+function renderSettings(){const c=comp();const s=S.settings;
+ document.getElementById('page').innerHTML=`<div class="grid g2"><div class="card"><h2>Bedrijfsgegevens — ${esc(c.short)}</h2>
+ <div class="field"><label>Volledige naam</label><input id="c_name" value="${esc(c.name)}"></div><div class="field"><label>Korte naam</label><input id="c_short" value="${esc(c.short)}"></div>
+ <div class="row"><div class="field"><label>KVK-nummer</label><input id="c_kvk" value="${esc(c.kvk)}"></div><div class="field"><label>BTW-nummer</label><input id="c_btw" value="${esc(c.btwnr)}" placeholder="NL000000000B01"></div></div><div class="field"><label>IBAN</label><input id="c_iban" value="${esc(c.iban)}"></div>
+ ${isOwner()?`<button class="btn" onclick="saveCompany()">Opslaan</button> <button class="btn sec" onclick="addCompany()">+ Nieuw bedrijf</button> ${S.companies.length>1?`<button class="btn danger" onclick="removeCompany()">Bedrijf verwijderen</button>`:''}`:'<div class="sub">Alleen de eigenaar kan bedrijfsgegevens wijzigen.</div>'}</div>
+ <div class="card"><h2>Vennoten — ${esc(c.short)}</h2>
+ <div class="sub" style="margin-bottom:10px">Alleen invullen als dit bedrijf een V.O.F. of maatschap is met meerdere vennoten. De winst wordt dan op de BTW-pagina automatisch verdeeld volgens onderstaande percentages, met een indicatie van de inkomstenbelasting per vennoot.</div>
+ ${partnersOf(c).map((p,i)=>`<div class="row partnerRow" style="align-items:flex-end">
+   <div class="field" style="flex:2"><label>Naam vennoot</label><input class="p_name" value="${esc(p.name)}" ${isOwner()?'':'disabled'}></div>
+   <div class="field" style="max-width:110px"><label>Aandeel %</label><input class="p_pct" type="number" min="0" max="100" value="${p.pct}" ${isOwner()?'':'disabled'}></div>
+   <div class="field" style="max-width:130px"><label>Overig inkomen (€/jr)</label><input class="p_other" type="number" min="0" value="${p.other||0}" ${isOwner()?'':'disabled'}></div>
+   <label class="chk" style="margin-bottom:12px"><input class="p_hours" type="checkbox" ${p.hours?'checked':''} ${isOwner()?'':'disabled'}> Uren­criterium gehaald</label>
+   ${isOwner()?`<button class="btn danger sm" style="margin-bottom:12px" onclick="removePartnerRow(${i})">✕</button>`:''}
+ </div>`).join('')||'<div class="sub" style="margin-bottom:10px">Nog geen vennoten toegevoegd.</div>'}
+ ${isOwner()?`<button class="btn sec sm" onclick="addPartnerRow()">+ Vennoot toevoegen</button> ${partnersOf(c).length?'<button class="btn sm" onclick="savePartners()">Opslaan</button>':''}`:''}</div>
+ <div class="card"><h2>AI factuur lezen & account</h2>
+ <div class="field"><label>Model</label><input id="s_model" value="${esc(s.model)}" list="models" ${isOwner()?'':'disabled'}><datalist id="models"><option value="claude-sonnet-4-6"><option value="claude-opus-4-1"><option value="claude-haiku-4-5"></datalist><div class="sub">De Anthropic API key staat veilig op de server (Supabase → Edge Functions → Secrets).</div></div>
+ <label class="chk"><input type="checkbox" id="s_auto" ${s.autoRead?'checked':''} ${isOwner()?'':'disabled'}> Direct lezen na upload</label>
+ <div style="margin-top:12px">${isOwner()?'<button class="btn" onclick="saveSettings()">Opslaan</button> ':''}<button class="btn sec" onclick="testApi()">Test AI-verbinding</button><div id="apiTest"></div></div>
+ <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+ <div class="sub">Ingelogd als <b>${esc(S.user?.email||'')}</b> · rol: <b>${isOwner()?'eigenaar':'boekhouder (alleen lezen)'}</b></div>
+ <div class="sub" style="margin-top:6px">Gebruikers toevoegen: Supabase → Authentication → Users → Add user. Nieuwe gebruikers zijn standaard alleen-lezen; eigenaar maken kan met SQL: <code>update bh_profiles set role='owner' where email='…';</code></div>
+ <div style="margin-top:10px"><button class="btn ghost" onclick="logout()">Uitloggen</button></div></div></div>
+ <div class="card"><h2>✉ Automatische betalingsherinneringen — ${esc(c.short)}</h2>
+ <div class="sub" style="margin-bottom:10px">Stuurt elke week (maandagochtend) automatisch een herinnering naar klanten met een verlopen, onbetaalde verkoopfactuur — alleen als er een e-mailadres bij de factuur staat. De toon wordt strenger bij elke volgende herinnering. Vereist eenmalige installatie van de Edge Function "stuur-herinneringen" (zie instructies eronder).</div>
+ ${(()=>{const rc=remCfg(c.id);return `<label class="chk"><input type="checkbox" id="r_enabled" ${rc.enabled?'checked':''} ${isOwner()?'':'disabled'}> Automatische herinneringen aan voor ${esc(c.short)}</label>
+ <div class="row" style="margin-top:8px"><div class="field"><label>Eerste herinnering na (dagen te laat)</label><input id="r_days" type="number" min="0" value="${rc.daysAfterDue}" ${isOwner()?'':'disabled'}></div>
+ <div class="field"><label>Interval tussen herinneringen (dagen)</label><input id="r_interval" type="number" min="1" value="${rc.intervalDays}" ${isOwner()?'':'disabled'}></div>
+ <div class="field"><label>Max. aantal herinneringen</label><input id="r_max" type="number" min="1" max="10" value="${rc.maxReminders}" ${isOwner()?'':'disabled'}></div></div>
+ ${isOwner()?`<button class="btn" onclick="saveReminders()">Opslaan</button> <button class="btn sec" onclick="testReminders()">Nu testen (1x direct versturen)</button><div id="remTest"></div>`:''}`})()}
+ <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+ <div class="sub"><b>Eenmalige installatie (per Supabase-project, niet per bedrijf):</b> maak een Edge Function <code>stuur-herinneringen</code> aan (net als bij "lees-factuur"), zet de secrets <code>RESEND_API_KEY</code>, <code>RESEND_FROM</code> (bv. <code>"TNS Boekhouding &lt;facturen@jouwdomein.nl&gt;"</code>) en een zelfgekozen <code>CRON_SECRET</code>, en draai daarna het SQL-script dat de wekelijkse planning instelt. Vraag me om de bestanden als je zover bent.</div></div>
+ ${S.companies.length>1?`<div class="card"><h2>Overzicht per bedrijf</h2><div class="sub" style="margin-bottom:8px">Sta je een factuur niet te vinden bij het huidige bedrijf? Check hier of hij per ongeluk bij een ander bedrijf is beland (bv. omdat je van bedrijf wisselde tijdens het uploaden).</div>
+ <div class="tablewrap"><table><tr><th>Bedrijf</th><th class="num">Inkoop/bonnen</th><th class="num">Verkoop</th><th class="num">Bankmutaties</th><th class="num">Nog te controleren</th></tr>
+ ${S.companies.map(cc=>{const p=S.purchases.filter(x=>x.company===cc.id),s=S.sales.filter(x=>x.company===cc.id),bk=S.bank.filter(x=>x.company===cc.id);const chk=p.filter(x=>x.needsCheck).length+s.filter(x=>x.needsCheck).length;return `<tr ${cc.id===S.active?'style="font-weight:600;background:#eef2ff"':''}><td>${cc.id===S.active?'▶ ':''}${esc(cc.short)}</td><td class="num">${p.length}</td><td class="num">${s.length}</td><td class="num">${bk.length}</td><td class="num">${chk?`<span class="neg">${chk}</span>`:'0'}</td></tr>`}).join('')}
+ </table></div>
+ <div class="sub" style="margin-top:8px">Een factuur verplaatsen naar een ander bedrijf kan in de factuur zelf: open hem en kies het juiste bedrijf boven in het formulier.</div></div>`:''}
+ ${isOwner()?`<div class="card"><h2>Gevaarlijke zone</h2><button class="btn danger" onclick="wipeAll()">Alle data van alle bedrijven wissen</button></div>`:``}`}
+function saveCompany(){const c=comp();c.name=v('c_name');c.short=v('c_short');c.kvk=v('c_kvk');c.btwnr=v('c_btw');c.iban=v('c_iban');save();fillCompanies();toast('Bedrijfsgegevens opgeslagen');function v(id){return document.getElementById(id).value.trim()}}
+function partnersOf(c){return Array.isArray(c.partners)&&c.partners.length?c.partners:[]}
+function addPartnerRow(){const c=comp();c.partners=partnersOf(c);const n=c.partners.length;c.partners.push({name:'',pct:n===0?100:0,hours:true,other:0});if(n===1)c.partners[0].pct=50,c.partners[1].pct=50;render()}
+function removePartnerRow(i){const c=comp();c.partners.splice(i,1);render()}
+function savePartners(){const c=comp();const rows=[...document.querySelectorAll('.partnerRow')];c.partners=rows.map(row=>({name:row.querySelector('.p_name').value.trim(),pct:Math.max(0,Math.min(100,Number(row.querySelector('.p_pct').value)||0)),hours:row.querySelector('.p_hours').checked,other:Number(row.querySelector('.p_other').value)||0}));const tot=c.partners.reduce((a,p)=>a+p.pct,0);save();toast(tot!==100&&c.partners.length?`⚠️ Opgeslagen, maar percentages tellen op tot ${tot}% (moet 100% zijn)`:'✅ Vennoten opgeslagen');render()}
+function addCompany(){const n=prompt('Naam van het nieuwe bedrijf:');if(!n)return;const c={id:uid(),name:n,short:n,kvk:'',btwnr:'',iban:'',sort:S.companies.length+1};S.companies.push(c);S.active=c.id;save();fillCompanies();render()}
+function removeCompany(){const c=comp();if(!confirm(`"${c.name}" en ALLE bijbehorende facturen en bankmutaties verwijderen?`))return;S.purchases.filter(p=>p.company===c.id).concat(S.sales.filter(p=>p.company===c.id)).forEach(p=>delFile(p.fileId));S.purchases=S.purchases.filter(p=>p.company!==c.id);S.sales=S.sales.filter(p=>p.company!==c.id);S.bank=S.bank.filter(p=>p.company!==c.id);S.companies=S.companies.filter(x=>x.id!==c.id);S.active=S.companies[0].id;save();fillCompanies();render()}
+function saveSettings(){S.settings.model=document.getElementById('s_model').value.trim()||'claude-sonnet-4-6';S.settings.autoRead=document.getElementById('s_auto').checked;save();toast('Instellingen opgeslagen')}
+function remCfg(companyId){const d={enabled:false,daysAfterDue:7,intervalDays:7,maxReminders:3};return Object.assign(d,(S.settings.reminders||{})[companyId]||{})}
+function saveReminders(){S.settings.reminders=S.settings.reminders||{};S.settings.reminders[S.active]={enabled:document.getElementById('r_enabled').checked,daysAfterDue:Number(document.getElementById('r_days').value)||0,intervalDays:Math.max(1,Number(document.getElementById('r_interval').value)||7),maxReminders:Math.max(1,Number(document.getElementById('r_max').value)||3)};save();toast('Herinnering-instellingen opgeslagen')}
+async function testReminders(){const el=document.getElementById('remTest');el.innerHTML='<div class="aibox"><div class="spin"></div>Bezig…</div>';try{const {data:{session}}=await sb.auth.getSession();const res=await fetch(SUPABASE_URL+'/functions/v1/stuur-herinneringen',{method:'POST',headers:{'content-type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({company:S.active,test:true})});const j=await res.json();if(!res.ok)throw new Error(j.error||('Serverfout '+res.status));el.innerHTML=`<div class="ok">✅ ${j.sent||0} herinnering(en) verstuurd${j.skipped?`, ${j.skipped} overgeslagen (geen e-mail, nog niet te laat, of max. bereikt)`:''}.</div>`;save()}catch(e){el.innerHTML='<div class="err">❌ '+esc(e.message)+' — is de function "stuur-herinneringen" gedeployed en zijn de secrets ingesteld?</div>'}}
+async function testApi(){const el=document.getElementById('apiTest');el.innerHTML='<div class="aibox"><div class="spin"></div>Testen…</div>';try{const {data:{session}}=await sb.auth.getSession();const res=await fetch(SUPABASE_URL+'/functions/v1/lees-factuur',{method:'POST',headers:{'content-type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({fileId:'__test__'})});const j=await res.json();if(res.status===404&&/Bijlage niet gevonden/.test(j.error||''))el.innerHTML='<div class="ok">✅ Edge Function bereikbaar, ingelogd en API key aanwezig. Upload een bon om echt te testen.</div>';else if(res.status===500&&/ANTHROPIC_API_KEY/.test(j.error||''))el.innerHTML='<div class="err">❌ ANTHROPIC_API_KEY ontbreekt bij Supabase → Edge Functions → Secrets</div>';else if(res.status===401)el.innerHTML='<div class="err">❌ Sessie niet geaccepteerd: '+esc(j.error||'')+'</div>';else el.innerHTML='<div class="'+(res.ok?'ok':'err')+'">Antwoord '+res.status+': '+esc(j.error||JSON.stringify(j).slice(0,120))+'</div>'}catch(e){el.innerHTML='<div class="err">❌ '+esc(e.message)+' — is de function "lees-factuur" gedeployed?</div>'}}
+async function wipeAll(){if(!confirm('Echt ALLES wissen? Dit kan niet ongedaan worden gemaakt.'))return;if(!confirm('Laatste waarschuwing: alle facturen, bank en bijlagen van alle bedrijven worden verwijderd.'))return;const ids=[...S.purchases,...S.sales].filter(p=>p.fileId).map(p=>p.fileId);if(ids.length)await sb.storage.from('bijlagen').remove(ids);S.purchases=[];S.sales=[];S.bank=[];await syncNow();location.reload()}
+async function logout(){await sb.auth.signOut();location.reload()}
+
+/* ================== START / LOGIN ================== */
+async function login(){const em=document.getElementById('lockem').value.trim(),pw=document.getElementById('lockpw').value;const err=document.getElementById('lockerr');err.textContent='Inloggen…';const {error}=await sb.auth.signInWithPassword({email:em,password:pw});if(error){err.textContent='Inloggen mislukt: '+(error.message==='Invalid login credentials'?'onjuist e-mailadres of wachtwoord':error.message);return}err.textContent='';await boot()}
+async function boot(){
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session){document.getElementById('lock').style.display='flex';setTimeout(()=>document.getElementById('lockem').focus(),100);return}
+ S.user=session.user;document.getElementById('lock').style.display='none';
+ try{await load()}catch(e){toast('❌ Laden mislukt: '+esc(e.message),8000);return}
+ fillCompanies();route();setSyncState('ok');
+ if(!isOwner())document.querySelectorAll('.drop').forEach(d=>d.style.display='none');
+}
+sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT'){document.getElementById('lock').style.display='flex'}});
+boot();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})})}
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredInstallPrompt=e;const b=document.getElementById('installBtn');if(b)b.style.display='inline-flex'});
+async function installApp(){if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;const b=document.getElementById('installBtn');if(b)b.style.display='none'}
+window.addEventListener('appinstalled',()=>{const b=document.getElementById('installBtn');if(b)b.style.display='none'});
+document.addEventListener('paste',e=>{const items=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/')).map(i=>i.getAsFile());if(items.length&&!document.getElementById('invModal').classList.contains('open'))handleFiles(items)});
+</script>
+</body>
+</html>
